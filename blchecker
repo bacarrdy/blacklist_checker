@@ -21,7 +21,7 @@ do
     res=`dig +short $ip.$l | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep 127.0.*`
     if [ ! -z "$res"  ]; then
     EMAILMESSAGE=`echo "ip $i1.$i2 blacklisted on $l list - gotten result $res"`
-    echo $EMAILMESSAGE | mailx -s "BLACKLISTINTAS ipas" "$EMAIL"
+    echo $EMAILMESSAGE | mail -s "BLACKLISTED ip" "$EMAIL"
     echo $EMAILMESSAGE
     else
     echo "ip $i1.$i2 not blacklisted on $l list - gotten result $res"
