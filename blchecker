@@ -5,7 +5,7 @@ sip=1s
 #sleep between each blacklist check
 sblck=0.1s
 #Email to witch one it will send blacklisted ip
-EMAIL="info@vpsnet.lt"
+EMAIL="example@vpsnet.lt"
 
 
 while read i;
