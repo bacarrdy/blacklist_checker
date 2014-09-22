@@ -1,7 +1,7 @@
-blacklist_checker made by www.vpsnet.lt
+blacklist_checker
 =================
 
-simple bash script to check or subnets are blacklisted
+simple bash script to check or subnets are blacklisted made by www.vpsnet.lt
 
 this simple script can check subnets (from file sub) or they are blacklisted in an blacklist (from file list)
 
