@@ -1,8 +1,8 @@
-#sleep betwen subnets
+#sleep between subnets
 ssub=10s
-#sleep betwen each ip is checked
+#sleep between each ip is checked
 sip=1s
-#sleep betwen each blacklist check
+#sleep between each blacklist check
 sblck=0.1s
 #Email to witch one it will send blacklisted ip
 EMAIL="info@vpsnet.lt"
