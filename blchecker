@@ -1,0 +1,35 @@
+#sleep betwen subnets
+ssub=10s
+#sleep betwen each ip is checked
+sip=1s
+#sleep betwen each blacklist check
+sblck=0.1s
+#Email to witch one it will send blacklisted ip
+EMAIL="info@vpsnet.lt"
+
+
+while read i;
+do
+  i1=`echo $i | awk '{print $1}'`
+  i2=`echo $i | awk '{print $2}'`
+  i3=`echo $i | awk '{print $3}'`
+  while [[ $i2 -le $i3 ]]
+  do
+  ip=`echo $i1.$i2 |awk -F"." '{for(i=NF;i>0;i--) printf i!=1?$i".":"%s",$i}'`
+   for l in $(cat list)
+   do
+    res=`dig +short $ip.$l | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep 127.0.*`
+    if [ ! -z "$res"  ]; then
+    EMAILMESSAGE=`echo "ip $i1.$i2 blacklisted on $l list - gotten result $res"`
+    echo $EMAILMESSAGE | mailx -s "BLACKLISTINTAS ipas" "$EMAIL"
+    echo $EMAILMESSAGE
+    else
+    echo "ip $i1.$i2 not blacklisted on $l list - gotten result $res"
+    fi
+    sleep $sblck
+   done
+  ((i2 = i2 + 1))
+   sleep $sip
+  done
+ sleep $ssub
+done <sub
