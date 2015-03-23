@@ -27,5 +27,6 @@ you can add blacklists that much as you need
 
 Script require:
 	sendmail
+	dig
 
 I have checked it on our www.VPSnet.lt subnet`s and works fine, you can edit it if you want
