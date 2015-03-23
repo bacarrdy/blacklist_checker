@@ -1,3 +1,4 @@
+#!/bin/bash
 #sleep between subnets
 ssub=10s
 #sleep between each ip is checked
@@ -5,7 +6,7 @@ sip=1s
 #sleep between each blacklist check
 sblck=0.1s
 #Email to witch one it will send blacklisted ip
-EMAIL="example@vpsnet.lt"
+EMAIL=""
 
 
 while read i;
@@ -21,8 +22,10 @@ do
     res=`dig +short $ip.$l | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep 127.0.*`
     if [ ! -z "$res"  ]; then
     EMAILMESSAGE=`echo "ip $i1.$i2 blacklisted on $l list - gotten result $res"`
-    echo $EMAILMESSAGE | mail -s "BLACKLISTED ip" "$EMAIL"
     echo $EMAILMESSAGE
+    if [ ! -z "$EMAIL"  ]; then #do not send email if dont want it :)
+	  echo $EMAILMESSAGE | mail -s "BLACKLISTED ip" "$EMAIL"
+    fi
     else
     echo "ip $i1.$i2 not blacklisted on $l list - gotten result $res"
     fi
