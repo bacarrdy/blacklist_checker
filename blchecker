@@ -17,7 +17,7 @@ do
   while [[ $i2 -le $i3 ]]
   do
   ip=`echo $i1.$i2 |awk -F"." '{for(i=NF;i>0;i--) printf i!=1?$i".":"%s",$i}'`
-   for l in $(cat list)
+   for l in $(cat list | grep -v ^#)
    do
     res=`dig +short $ip.$l | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep 127.0.*`
     if [ ! -z "$res"  ]; then
