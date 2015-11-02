@@ -4,7 +4,7 @@ ssub=2s
 #sleep between each ip is checked
 sip=0.1s
 #sleep between each blacklist check
-sblck=0.1s
+sblck=0.001s
 #Email to witch one it will send blacklisted ip
 EMAIL="info@email.com"
 #Send email after each subnet check 1 = yes; 0 =  email will be send instantly after blaclist found
