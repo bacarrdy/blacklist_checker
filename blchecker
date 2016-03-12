@@ -44,7 +44,11 @@ do
    sleep $sip
   done
   if [ "$semail" = 1  ]; then
+  if [ -z "$mailarr" ]; then
+    echo "Array empty"
+  else
   echo -e  ${mailarr[*]} | mail -s "BLACKLISTED ips $i1" "$EMAIL"
+  fi
   unset mailarr
   fi
  sleep $ssub
