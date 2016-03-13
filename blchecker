@@ -16,7 +16,7 @@ EMAIL="info@email.com"
 #Send email after each subnet check 1 = yes; 0 =  email will be send instantly after blaclist found
 semail=1
 
-#prompter, if 1 then in email will be included remooval link from file suf
+#prompter, if 1 then in email will be included removal link from file prompter
 prompter=1
 prompter_phone=111111
 prompter_email=$EMAIL #you can enter any other email if you want
