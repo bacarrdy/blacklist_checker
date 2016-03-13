@@ -16,6 +16,12 @@ EMAIL="info@email.com"
 #Send email after each subnet check 1 = yes; 0 =  email will be send instantly after blaclist found
 semail=1
 
+#prompter, if 1 then in email will be included remooval link from file suf
+prompter=1
+prompter_phone=111111
+prompter_email=$EMAIL #you can enter any other email if you want
+
+
 use_smtp="0" # requires package mailx if 1 then emails will be sent via smtp if 0 via mail server
 smtp_srv="smt.server.com"
 smtp_port="25"
@@ -40,7 +46,16 @@ do
 		do
 			res=`dig +short $ip.$l | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep 127.0.*`
 			if [ ! -z "$res"  ]; then
-				EMAILMESSAGE=`echo "ip $i1.$i2 blacklisted on $l list - gotten result $res \n"`
+				if [ "$prompter" = 1  ]; then
+					rez_prompter=`cat prompter | grep -v "#" | grep $l | awk '{print $2}' |  sed "s/{{ip}}/$i1.$i2/g" | sed "s/{{phone}}/$prompter_phone/g" | sed "s/{{email}}/$prompter_email/g"`
+					if [ ! -z "$rez_prompter"  ]; then
+						EMAILMESSAGE=`echo " ip $i1.$i2 blacklisted on $l list - gotten result $res\n $rez_prompter\n\n"`
+					else
+						EMAILMESSAGE=`echo " ip $i1.$i2 blacklisted on $l list - gotten result $res\n\n"`
+					fi
+				else
+					EMAILMESSAGE=`echo " ip $i1.$i2 blacklisted on $l list - gotten result $res\n"`
+				fi
 				if [ ! -z "$EMAIL"  ]; then #do not send email if dont want it
 					if [ "$semail" = 0  ]; then
 						if [ "$use_smtp" = 1  ]; then
