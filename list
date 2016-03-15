@@ -65,7 +65,7 @@ sbl.spamhaus.org
 #ubl.unsubscore.com
 #web.dnsbl.sorbs.net
 xbl.spamhaus.org
-zen.spamhaus.org
+#zen.spamhaus.org
 #zombie.dnsbl.sorbs.net
 #dnsbl.inps.de
 #rbl.megarbl.net
