@@ -48,7 +48,8 @@ database_password="secret"
 database_name="an_database"
 
 
-
+#for crontabs we need to know where script is placed
+workdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 
 if [ "$semail" = 1  ]; then
@@ -63,12 +64,12 @@ do
 	while [[ $i2 -le $i3 ]]
 	do
 		ip=`echo $i1.$i2 |awk -F"." '{for(i=NF;i>0;i--) printf i!=1?$i".":"%s",$i}'`
-		for l in $(cat list | grep -v "#")
+		for l in $(cat $workdir/list | grep -v "#")
 		do
 			res=`dig +short $ip.$l | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep 127.0.*`
 			if [ ! -z "$res"  ]; then
 				if [ "$prompter" = 1  ]; then
-					rez_prompter=`cat prompter | grep -v "#" | grep $l | awk '{print $2}' |  sed "s/{{ip}}/$i1.$i2/g" | sed "s/{{phone}}/$prompter_phone/g" | sed "s/{{email}}/$prompter_email/g"`
+					rez_prompter=`cat $workdir/prompter | grep -v "#" | grep $l | awk '{print $2}' |  sed "s/{{ip}}/$i1.$i2/g" | sed "s/{{phone}}/$prompter_phone/g" | sed "s/{{email}}/$prompter_email/g"`
 					if [ ! -z "$rez_prompter"  ]; then
 						EMAILMESSAGE=`echo "ip $i1.$i2 blacklisted on $l list - gotten result $res\n$rez_prompter\n\n"`
 					else
@@ -109,7 +110,7 @@ do
 							user_f_name=`echo $user_client_data | awk '{print $1}'`
 							user_l_name=`echo $user_client_data | awk '{print $2}'`
 							user_email=`echo $user_client_data | awk '{print $3}'`
-							user_rez_prompter=`cat prompter | grep -v "#" | grep $l | awk '{print $2}' |  sed "s/{{ip}}/$i1.$i2/g" | sed "s/{{phone}}/$prompter_phone/g" | sed "s/{{email}}/$user_email/g"`
+							user_rez_prompter=`cat $workdir/prompter | grep -v "#" | grep $l | awk '{print $2}' |  sed "s/{{ip}}/$i1.$i2/g" | sed "s/{{phone}}/$prompter_phone/g" | sed "s/{{email}}/$user_email/g"`
 							#now lets generate few different types of messages because in my system there is more then one language
 							if [ "$user_language" = en  ]; then
 								user_subject="Your server ip address is blacklisted"
@@ -160,4 +161,4 @@ do
 		unset mailarr
 	fi
 sleep $ssub
-done <sub
+done <$workdir/sub
