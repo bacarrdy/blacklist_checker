@@ -30,6 +30,26 @@ smtp_password="smtp_password"
 smtp_from="from@server.com"
 smtp_ssl_args="-S smtp-use-starttls -S nss-config-dir=/etc/pki/nssdb/ -S ssl-verify=ignore"
 
+#This is only example how you can modify this script to send information about blacklisted ips directly to your clients
+#you must modyfi DATABASE queryes to get correct information about client if you want to use it
+#i have added only example of database queryes
+#also you must install database client in server from witch one this script will run
+#because of all requirements i posted by default this function is turned off and you must it turn on only when you know what are you doing
+#in my example i`m using mysql/mariadb database if you are using an other you must change database client in script
+#you can find all my example queryes by entering in search "mysql"
+
+user_notify=0
+user_notify_test=1 #if 1 = enabled if enabled then it will send email to your specified email address
+user_notify_test_email=$EMAIL #you can setup test email
+database_ip="1.1.1.1"
+database_login="root"
+database_password="secret"
+database_name="an_database"
+
+
+
+
+
 if [ "$semail" = 1  ]; then
 	declare -a mailarr
 fi
@@ -49,12 +69,12 @@ do
 				if [ "$prompter" = 1  ]; then
 					rez_prompter=`cat prompter | grep -v "#" | grep $l | awk '{print $2}' |  sed "s/{{ip}}/$i1.$i2/g" | sed "s/{{phone}}/$prompter_phone/g" | sed "s/{{email}}/$prompter_email/g"`
 					if [ ! -z "$rez_prompter"  ]; then
-						EMAILMESSAGE=`echo " ip $i1.$i2 blacklisted on $l list - gotten result $res\n $rez_prompter\n\n"`
+						EMAILMESSAGE=`echo "ip $i1.$i2 blacklisted on $l list - gotten result $res\n$rez_prompter\n\n"`
 					else
-						EMAILMESSAGE=`echo " ip $i1.$i2 blacklisted on $l list - gotten result $res\n\n"`
+						EMAILMESSAGE=`echo "ip $i1.$i2 blacklisted on $l list - gotten result $res\n\n"`
 					fi
 				else
-					EMAILMESSAGE=`echo " ip $i1.$i2 blacklisted on $l list - gotten result $res\n"`
+					EMAILMESSAGE=`echo "ip $i1.$i2 blacklisted on $l list - gotten result $res\n"`
 				fi
 				if [ ! -z "$EMAIL"  ]; then #do not send email if dont want it
 					if [ "$semail" = 0  ]; then
@@ -68,6 +88,56 @@ do
 					fi
 				fi
 				echo $EMAILMESSAGE
+				#users notification about blocked ips
+				if [ "$user_notify" = 1  ]; then
+					#database query to get or ip is actyve (only in my system there is lis of actyve or no ips list thats why i have comented it out)
+					#user_ip_used=`echo "SELECT ROW_WHERE_INFO_OF_IP_USED FROM IPS_TABLE WHERE ROW_IPS LIKE '$i1.$i2';" | mysql -u$database_login -h$database_ip -p$database_password $database_name | grep -v ROW_WHERE_INFO_OF_IP_USED`
+					#if [ "$user_ip_used" = true  ]; then # answer from db in your system may be different or it dos not exists in your system and it is only example
+						#lets check who own ip
+						#getting orderid
+						user_order_id=`echo "SELECT ORDER_ID FROM IPS_TABLE WHERE ROW_IPS LIKE '$i1.$i2';" | mysql -u$database_login -h$database_ip -p$database_password $database_name | grep -v ORDER_ID`
+						#we do not want to send emails if there is no actyve server
+						if [ "$user_order_id" = 0  ]; then
+							echo "no order id"
+						else
+							#geting clientid
+							user_client_id=`echo "SELECT CLIENT_ID FROM YOUR_ORDERS WHERE ID LIKE '$user_order_id';" | mysql -u$database_login -h$database_ip -p$database_password $database_name | grep -v CLIENT_ID`
+							#geting user data witch one we will use to send email notification about blocked ip
+							user_client_data=`echo "SELECT FIRST_NAME,LAST_NAME,EMAIL,USER_LANGUAGE FROM CLIENTS_TABLE WHERE id LIKE '$user_client_id';" | mysql -u$database_login -h$database_ip -p$database_password $database_name | grep -v FIRST_NAME`
+							user_language=`echo $user_client_data | awk '{print $4}'`
+							user_f_name=`echo $user_client_data | awk '{print $1}'`
+							user_l_name=`echo $user_client_data | awk '{print $2}'`
+							user_email=`echo $user_client_data | awk '{print $3}'`
+							user_rez_prompter=`cat prompter | grep -v "#" | grep $l | awk '{print $2}' |  sed "s/{{ip}}/$i1.$i2/g" | sed "s/{{phone}}/$prompter_phone/g" | sed "s/{{email}}/$user_email/g"`
+							#now lets generate few different types of messages because in my system there is more then one language
+							if [ "$user_language" = en  ]; then
+								user_subject="Your server ip address is blacklisted"
+								USER_EMAILMESSAGE="Hello $user_f_name $user_l_name,\n\nWe have detected that one of yours server ip address $i1.$i2 have been blacklisted in $l.\nPlease remove blacklist as soon as it possible - to do it please follow link below\n$user_rez_prompter\n\nThank you.\n\n--\n\nRegards,\nYOUR_ORGANIZATION Administration"
+							elif [ "$user_language" = lt  ]; then
+								user_subject="Jūsų serverio ip adresas yra blacklistintas"
+								USER_EMAILMESSAGE="Sveiki $user_f_name $user_l_name,\n\nAptikome, kad vienas iš jūsų serverio ip adresų $i1.$i2 yra blokuojamas $l blackliste.\nPrašome pašalinti blacklistą kaip įmanoma greičiau - informacija kaip tai padaryti rasite nuorodoje žemiau\n$user_rez_prompter\n\nDėkojame.\n\n--\n\nPagarbiai,\nYOUR_ORGANIZATION Administracija"
+							else
+								user_subject="Your server ip address is blacklisted"
+								USER_EMAILMESSAGE="Hello $user_f_name $user_l_name,\n\nWe have detected that one of yurs server ip address $i1.$i2 have been blacklisted in $l.\nPlease remove blacklist as soon as it possible - to do it please follow link below\n$user_rez_prompter\n\nThank you.\n\n--\n\nRegards,\nYOUR_ORGANIZATION Administration"
+							fi
+							#lets send notification to users
+							#we wont send notifications until we have tested it
+							if [ "$user_notify_test" = 1  ]; then
+								if [ "$use_smtp" = 1  ]; then
+									echo -e "$user_email $USER_EMAILMESSAGE" | mailx -s "$user_subject" $smtp_ssl_args -S smtp=smtp://$smtp_srv:$smtp_port -S smtp-auth=login -S smtp-auth-user=$smtp_user -S smtp-auth-password=$smtp_password -S from="Sender Name <$smtp_from>" $user_notify_test_email
+								else
+									echo -e "$user_email $USER_EMAILMESSAGE" | mail -s "$user_subject" $user_notify_test_email
+								fi		
+							else
+								if [ "$use_smtp" = 1  ]; then
+									echo -e $USER_EMAILMESSAGE | mailx -s "$user_subject" $smtp_ssl_args -S smtp=smtp://$smtp_srv:$smtp_port -S smtp-auth=login -S smtp-auth-user=$smtp_user -S smtp-auth-password=$smtp_password -S from="Sender Name <$smtp_from>" $user_email
+								else
+									echo -e $USER_EMAILMESSAGE | mail -s "$user_subject" $user_email
+								fi						
+							fi
+						fi
+					#fi
+				fi
 			else
 				echo "ip $i1.$i2 not blacklisted on $l list - gotten result $res"
 			fi
