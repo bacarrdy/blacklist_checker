@@ -4,6 +4,9 @@
 ##mail server with mail function (if chosen use_smtp="0")
 ##mailx (if chosen use_smtp="1")
 
+#DNS server (some times own DNS server can check queryes slower so you want to enter an dns server manualy) leave it empty if you want to use your own dns server
+dnsserver=8.8.8.8
+
 
 #sleep between subnets
 ssub=2s
@@ -66,7 +69,11 @@ do
 		ip=`echo $i1.$i2 |awk -F"." '{for(i=NF;i>0;i--) printf i!=1?$i".":"%s",$i}'`
 		for l in $(cat $workdir/list | grep -v "#")
 		do
-			res=`dig +short $ip.$l | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep 127.0.*`
+			if [ -z "$dnsserver"  ]; then
+				res=`dig +short $ip.$l | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep 127.0.*`
+			else
+				res=`dig +short @$dnsserver $ip.$l | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep 127.0.*`
+			fi
 			if [ ! -z "$res"  ]; then
 				if [ "$prompter" = 1  ]; then
 					rez_prompter=`cat $workdir/prompter | grep -v "#" | grep $l | awk '{print $2}' |  sed "s/{{ip}}/$i1.$i2/g" | sed "s/{{phone}}/$prompter_phone/g" | sed "s/{{email}}/$prompter_email/g"`
