@@ -5,7 +5,7 @@
 ##mailx (if chosen use_smtp="1")
 
 #DNS server (some times own DNS server can check queryes slower so you want to enter an dns server manualy) leave it empty if you want to use your own dns server
-dnsserver=8.8.8.8
+dnsserver=
 
 
 #sleep between subnets
