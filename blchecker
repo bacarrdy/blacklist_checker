@@ -133,7 +133,7 @@ do
 							#we wont send notifications until we have tested it
 							if [ "$user_notify_test" = 1  ]; then
 								if [ "$use_smtp" = 1  ]; then
-									echo -e "$user_email $USER_EMAILMESSAGE" | mailx -s "$user_subject" $smtp_ssl_args -S smtp=smtp://$smtp_srv:$smtp_port -S smtp-auth=login -S smtp-auth-user=$smtp_user -S smtp-auth-password=$smtp_password -S from="smtp_sender_name <$smtp_from>" $user_notify_test_email
+									echo -e "$user_email $USER_EMAILMESSAGE" | mailx -s "$user_subject" $smtp_ssl_args -S smtp=smtp://$smtp_srv:$smtp_port -S smtp-auth=login -S smtp-auth-user=$smtp_user -S smtp-auth-password=$smtp_password -S from="$smtp_sender_name <$smtp_from>" $user_notify_test_email
 								else
 									echo -e "$user_email $USER_EMAILMESSAGE" | mail -s "$user_subject" $user_notify_test_email
 								fi		
@@ -160,7 +160,7 @@ do
 			echo "Array empty"
 		else
 			if [ "$use_smtp" = 1  ]; then
-				echo -e  ${mailarr[*]} | mailx -s "BLACKLISTED ips $i1" $smtp_ssl_args -S smtp=smtp://$smtp_srv:$smtp_port -S smtp-auth=login -S smtp-auth-user=$smtp_user -S smtp-auth-password=$smtp_password -S from="smtp_sender_name <$smtp_from>" $EMAIL
+				echo -e  ${mailarr[*]} | mailx -s "BLACKLISTED ips $i1" $smtp_ssl_args -S smtp=smtp://$smtp_srv:$smtp_port -S smtp-auth=login -S smtp-auth-user=$smtp_user -S smtp-auth-password=$smtp_password -S from="$smtp_sender_name <$smtp_from>" $EMAIL
 			else
 				echo -e  ${mailarr[*]} | mail -s "BLACKLISTED ips $i1" "$EMAIL"
 			fi   
