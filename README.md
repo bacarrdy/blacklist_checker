@@ -12,19 +12,24 @@ Just add subnets in file sub like this:
 	2.3.4 15 255
 	8.6.4 200 255
 
-	for example ill explain 1.2.3 1 255
-	1.2.3 is the begining of c class subnet
-	1 is the ip of subnet from witch one script will start to check
-	255 is the last ip from subnet on with one script stop checking that subnet and will take other subnet
+	for example I'll explain 1.2.3 1 255
+	1.2.3 is the begining of the c class subnet or rather /24
+	1 is the first ip from the subnet from which script will start to check
+	255 is the last ip from subnet to be checked. From here on script stop checking that subnet and will continue to the next subnet
+	
+	If you want, you can add single IP addresses using the same format
+	Such as:
+	3.4.5 6 6
   
 and then add blacklists in file list
 
+	# Make sure you have created an account and whitelisted your IP to query from Barracuda
 	b.barracudacentral.org
 	bl.spamcannibal.org
 	bl.spamcop.net
 	blackholes.wirehub.net
 	
-You can add blacklists that much as you need.
+You can add as many blacklists as you need.
 Entries that start with # will be disregarded when script runs.
 
 Script requires:
@@ -32,4 +37,4 @@ Script requires:
 	dig
 	mailx (heirloom-mailx)
 
-I have checked it on our www.VPSnet.lt subnet`s and works fine, you can edit it if you want
+I have checked it on our www.VPSnet.lt subnets and it works fine, you can edit it if you want
