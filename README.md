@@ -1,9 +1,10 @@
 blacklist_checker
 =================
 
-simple bash script to check or subnets are blacklisted made by www.vpsnet.lt
+Simple bash script to check whether if single IP addresses or subnets are blacklisted or not. 
+Made by www.vpsnet.lt
 
-this simple script can check subnets (from file sub) or they are blacklisted in an blacklist (from file list)
+This simple script can check subnets (from file sub) to see if they are blacklisted in a blacklist (from file list)
 
 Just add subnets in file sub like this:
 
@@ -23,10 +24,12 @@ and then add blacklists in file list
 	bl.spamcop.net
 	blackholes.wirehub.net
 	
-you can add blacklists that much as you need
+You can add blacklists that much as you need.
+Entries that start with # will be disregarded when script runs.
 
-Script require:
+Script requires:
 	sendmail
 	dig
+	mailx (heirloom-mailx)
 
 I have checked it on our www.VPSnet.lt subnet`s and works fine, you can edit it if you want
