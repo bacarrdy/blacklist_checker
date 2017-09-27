@@ -45,10 +45,10 @@ smtp_ssl_args="-S smtp-use-starttls -S nss-config-dir=/etc/pki/nssdb/ -S ssl-ver
 user_notify=0
 user_notify_test=1 #if 1 = enabled if enabled then it will send email to your specified email address
 user_notify_test_email=$EMAIL #you can setup test email
-database_ip="1.1.1.1"
-database_login="root"
-database_password="secret"
-database_name="an_database"
+notify_database_ip="1.1.1.1"
+notify_database_login="root"
+notify_database_password="secret"
+notify_database_name="an_database"
 
 
 #for crontabs we need to know where script is placed
@@ -100,19 +100,19 @@ do
 				#users notification about blocked ips
 				if [ "$user_notify" = 1  ]; then
 					#database query to get or ip is actyve (only in my system there is lis of actyve or no ips list thats why i have comented it out)
-					#user_ip_used=`echo "SELECT ROW_WHERE_INFO_OF_IP_USED FROM IPS_TABLE WHERE ROW_IPS LIKE '$i1.$i2';" | mysql -u$database_login -h$database_ip -p$database_password $database_name | grep -v ROW_WHERE_INFO_OF_IP_USED`
+					#user_ip_used=`echo "SELECT ROW_WHERE_INFO_OF_IP_USED FROM IPS_TABLE WHERE ROW_IPS LIKE '$i1.$i2';" | mysql -u$notify_database_login -h$notify_database_ip -p$notify_database_password $notify_database_name | grep -v ROW_WHERE_INFO_OF_IP_USED`
 					#if [ "$user_ip_used" = true  ]; then # answer from db in your system may be different or it dos not exists in your system and it is only example
 						#lets check who own ip
 						#getting orderid
-						user_order_id=`echo "SELECT ORDER_ID FROM IPS_TABLE WHERE ROW_IPS LIKE '$i1.$i2';" | mysql -u$database_login -h$database_ip -p$database_password $database_name | grep -v ORDER_ID`
+						user_order_id=`echo "SELECT ORDER_ID FROM IPS_TABLE WHERE ROW_IPS LIKE '$i1.$i2';" | mysql -u$notify_database_login -h$notify_database_ip -p$notify_database_password $notify_database_name | grep -v ORDER_ID`
 						#we do not want to send emails if there is no actyve server
 						if [ "$user_order_id" = 0  ]; then
 							echo "no order id"
 						else
 							#geting clientid
-							user_client_id=`echo "SELECT CLIENT_ID FROM YOUR_ORDERS WHERE ID LIKE '$user_order_id';" | mysql -u$database_login -h$database_ip -p$database_password $database_name | grep -v CLIENT_ID`
+							user_client_id=`echo "SELECT CLIENT_ID FROM YOUR_ORDERS WHERE ID LIKE '$user_order_id';" | mysql -u$notify_database_login -h$notify_database_ip -p$notify_database_password $notify_database_name | grep -v CLIENT_ID`
 							#geting user data witch one we will use to send email notification about blocked ip
-							user_client_data=`echo "SELECT FIRST_NAME,LAST_NAME,EMAIL,USER_LANGUAGE FROM CLIENTS_TABLE WHERE id LIKE '$user_client_id';" | mysql -u$database_login -h$database_ip -p$database_password $database_name | grep -v FIRST_NAME`
+							user_client_data=`echo "SELECT FIRST_NAME,LAST_NAME,EMAIL,USER_LANGUAGE FROM CLIENTS_TABLE WHERE id LIKE '$user_client_id';" | mysql -u$notify_database_login -h$notify_database_ip -p$notify_database_password $notify_database_name | grep -v FIRST_NAME`
 							user_language=`echo $user_client_data | awk '{print $4}'`
 							user_f_name=`echo $user_client_data | awk '{print $1}'`
 							user_l_name=`echo $user_client_data | awk '{print $2}'`
