@@ -161,26 +161,26 @@ do
 							fi
 						fi
 					#fi
-				if [ "$script_use_database" = 1 ]; then
-					script_or_blacklisted=`echo "SELECT ip FROM ips_blacked WHERE ip LIKE '$ip';" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name | grep -v ip`
-					if [ -z "$script_or_blacklisted"  ]; then
-						script_curently_blacklisted=0
-						if [ "$prompter" = 1  ]; then
-							if [ "$user_notify" = 1  ]; then
-								echo "INSERT INTO ips_blacked (ip, userID, url, listName, date) VALUES ('$ip', '$user_email', '$rez_prompter', '$l', Now());" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
-								echo "INSERT INTO ips_history (ip, date, action, userID) VALUES ('$ip', Now(), '$l', '$user_email');" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
-							else
-								echo "INSERT INTO ips_blacked (ip, url, listName, date) VALUES ('$ip', '$rez_prompter', '$l', Now());" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
-								echo "INSERT INTO ips_history (ip, date, action) VALUES ('$ip', Now(), '$l');" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
-							fi
-						else
-							echo "INSERT INTO ips_blacked (ip, listName, date) VALUES ('$ip', '$l', Now());" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
-							echo "INSERT INTO ips_history (ip, date, action) VALUES ('$ip', Now(), '$l');" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
-						fi											
-					else
-						script_curently_blacklisted=1
-					fi
-				fi				
+                                        if [ "$script_use_database" = 1 ]; then
+                                                script_or_blacklisted=`echo "SELECT ip FROM ips_blacked WHERE ip LIKE '$i1.$i2' AND listName LIKE '$l';" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name | grep -v ip`
+                                                if [ -z "$script_or_blacklisted"  ]; then
+                                                        script_curently_blacklisted=0
+                                                        if [ "$prompter" = 1  ]; then
+                                                                if [ "$user_notify" = 1  ]; then
+                                                                        echo "INSERT INTO ips_blacked (ip, userID, url, listName, date) VALUES ('$i1.$i2', '$user_email', '$rez_prompter', '$l', Now());" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
+                                                                        echo "INSERT INTO ips_history (ip, date, action, userID) VALUES ('$i1.$i2', Now(), 'Added $l', '$user_email');" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
+                                                                else
+                                                                        echo "INSERT INTO ips_blacked (ip, url, listName, date) VALUES ('$i1.$i2', '$rez_prompter', '$l', Now());" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
+                                                                        echo "INSERT INTO ips_history (ip, date, action) VALUES ('$i1.$i2', Now(), 'Added $l');" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
+                                                                fi
+                                                        else
+                                                                echo "INSERT INTO ips_blacked (ip, listName, date) VALUES ('$i1.$i2', '$l', Now());" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
+                                                                echo "INSERT INTO ips_history (ip, date, action) VALUES ('$i1.$i2', Now(), 'Added $l');" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
+                                                        fi
+                                                else
+                                                        script_curently_blacklisted=1
+                                                fi
+                                        fi
 				fi
 			else
 				echo "ip $i1.$i2 not blacklisted on $l list - gotten result $res"
