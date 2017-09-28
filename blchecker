@@ -74,6 +74,23 @@ if [ "$semail" = 1  ]; then
 	declare -a mailarr
 fi
 
+if [ "$script_use_database" = 1 ]; then
+        script_database_blocked=`echo "SELECT ip, listName FROM ips_blacked" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name | grep -v ip`
+        IFS=$'\n'
+        for script_result in $script_database_blocked
+        do
+                script_ip=`echo $script_result | awk {'print $1'}`
+                script_blacklist=`echo $script_result | awk {'print $2'}`
+                script_ip_reverse=`echo $script_ip |awk -F"." '{for(i=NF;i>0;i--) printf i!=1?$i".":"%s",$i}'`
+                script_res=`dig +short $script_ip_reverse.script_blacklist | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep 127.0.*`
+                if [ -z "$script_res"  ]; then
+                        echo "DELETE FROM ips_blacked WHERE ip LIKE '$script_ip';" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
+                        echo "INSERT INTO ips_history (ip, date, action) VALUES ('$$script_ip', Now(), 'Removed $script_blacklist');" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
+                fi
+        done
+fi
+
+
 while read i;
 do
 	i1=`echo $i | awk '{print $1}'`
