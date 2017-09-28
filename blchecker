@@ -184,8 +184,8 @@ do
                                                         script_curently_blacklisted=0
                                                         if [ "$prompter" = 1  ]; then
                                                                 if [ "$user_notify" = 1  ]; then
-                                                                        echo "INSERT INTO ips_blacked (ip, userID, url, listName, date) VALUES ('$i1.$i2', '$user_notify_test_email', '$rez_prompter', '$l', Now());" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
-                                                                        echo "INSERT INTO ips_history (ip, date, action, userID) VALUES ('$i1.$i2', Now(), 'Added $l', '$user_notify_test_email');" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
+                                                                        echo "INSERT INTO ips_blacked (ip, userID, url, listName, date) VALUES ('$i1.$i2', '$user_email', '$rez_prompter', '$l', Now());" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
+                                                                        echo "INSERT INTO ips_history (ip, date, action, userID) VALUES ('$i1.$i2', Now(), 'Added $l', '$user_email');" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
                                                                 else
                                                                         echo "INSERT INTO ips_blacked (ip, url, listName, date) VALUES ('$i1.$i2', '$rez_prompter', '$l', Now());" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
                                                                         echo "INSERT INTO ips_history (ip, date, action) VALUES ('$i1.$i2', Now(), 'Added $l');" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
