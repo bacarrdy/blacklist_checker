@@ -34,13 +34,28 @@ smtp_from="from@server.com"
 smtp_sender_name="Your company"
 smtp_ssl_args="-S smtp-use-starttls -S nss-config-dir=/etc/pki/nssdb/ -S ssl-verify=ignore"
 
+#If you want to use web interface please confogure options below
+#to use web interface you need LAMP, LEMP (web server, database server (mysql, mariadb) and php witch one supports PDO)
+#you need to upload www/blacklist content to web server webdir (it can be different depending on your OS, but it will be one of these:
+#/var/www
+#/var/html/www
+#/var/html)
+#also you need to upload to mysql server database.sql file (before doing this dont forget to create database)
+#and last think is to configure options below
+
+script_use_database=0 # if 0 script will not use database to store all information if 1 it will store all collected data to mysql (dont forget to create database for it, database file can be found www/blacklist/database.sql)
+script_database_ip="2.2.2.2"
+script_database_login="root"
+script_database_password="secret"
+script_database_name="blacklist"
+
 #This is only example how you can modify this script to send information about blacklisted ips directly to your clients
 #you must modyfi DATABASE queryes to get correct information about client if you want to use it
 #i have added only example of database queryes
 #also you must install database client in server from witch one this script will run
 #because of all requirements i posted by default this function is turned off and you must it turn on only when you know what are you doing
 #in my example i`m using mysql/mariadb database if you are using an other you must change database client in script
-#you can find all my example queryes by entering in search "mysql"
+#you can find all my example queryes by entering in search "$notify_database_login"
 
 user_notify=0
 user_notify_test=1 #if 1 = enabled if enabled then it will send email to your specified email address
@@ -74,7 +89,7 @@ do
 			else
 				res=`dig +short @$dnsserver $ip.$l | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep 127.0.*`
 			fi
-			if [ ! -z "$res"  ]; then
+			if [ ! -z "$res"  ]; then		
 				if [ "$prompter" = 1  ]; then
 					rez_prompter=`cat $workdir/prompter | grep -v "#" | grep $l | awk '{print $2}' |  sed "s/{{ip}}/$i1.$i2/g" | sed "s/{{phone}}/$prompter_phone/g" | sed "s/{{email}}/$prompter_email/g"`
 					if [ ! -z "$rez_prompter"  ]; then
@@ -146,6 +161,26 @@ do
 							fi
 						fi
 					#fi
+				if [ "$script_use_database" = 1 ]; then
+					script_or_blacklisted=`echo "SELECT ip FROM ips_blacked WHERE ip LIKE '$ip';" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name | grep -v ip`
+					if [ -z "$script_or_blacklisted"  ]; then
+						script_curently_blacklisted=0
+						if [ "$prompter" = 1  ]; then
+							if [ "$user_notify" = 1  ]; then
+								echo "INSERT INTO ips_blacked (ip, userID, url, listName, date) VALUES ('$ip', '$user_email', '$rez_prompter', '$l', Now());" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
+								echo "INSERT INTO ips_history (ip, date, action, userID) VALUES ('$ip', Now(), '$l', '$user_email');" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
+							else
+								echo "INSERT INTO ips_blacked (ip, url, listName, date) VALUES ('$ip', '$rez_prompter', '$l', Now());" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
+								echo "INSERT INTO ips_history (ip, date, action) VALUES ('$ip', Now(), '$l');" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
+							fi
+						else
+							echo "INSERT INTO ips_blacked (ip, listName, date) VALUES ('$ip', '$l', Now());" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
+							echo "INSERT INTO ips_history (ip, date, action) VALUES ('$ip', Now(), '$l');" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
+						fi											
+					else
+						script_curently_blacklisted=1
+					fi
+				fi				
 				fi
 			else
 				echo "ip $i1.$i2 not blacklisted on $l list - gotten result $res"
