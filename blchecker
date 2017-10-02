@@ -100,7 +100,7 @@ if [ "$semail" = 1  ]; then
 fi
 
 if [ "$script_use_database" = 1 ]; then
-        script_database_blocked=`echo "SELECT ip, listName FROM ips_blacked WHERE recheck <= DATE_SUB(NOW(), INTERVAL $script_recheck_from_db_h HOUR)" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name | grep -v ip`
+        script_database_blocked=`echo "SELECT ip, listName FROM ips_blacked WHERE recheck <= DATE_SUB(NOW(), INTERVAL $script_recheck_from_db_h HOUR);" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name | grep -v ip`
         IFS=$'\n'
         for script_result in $script_database_blocked
         do
