@@ -164,6 +164,9 @@ do
 						#we do not want to send emails if there is no actyve server
 						if [ "$user_order_id" = 0  ]; then
 							echo "no order id"
+                                                        if [ "$script_use_database" = 1 ]; then
+                                                                user_email=""
+                                                        fi
 						else
 							#geting clientid
 							user_client_id=`echo "SELECT CLIENT_ID FROM YOUR_ORDERS WHERE ID LIKE '$user_order_id';" | mysql -u$notify_database_login -h$notify_database_ip -p$notify_database_password $notify_database_name | grep -v CLIENT_ID`
@@ -201,6 +204,10 @@ do
 								fi						
 							fi
 						fi
+					#else
+                                        	if [ "$script_use_database" = 1 ]; then
+                                                	user_email=""
+                                                fi
 					#fi
                                         if [ "$script_use_database" = 1 ]; then
                                                 script_or_blacklisted=`echo "SELECT ip FROM ips_blacked WHERE ip LIKE '$i1.$i2' AND listName LIKE '$l';" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name | grep -v ip`
