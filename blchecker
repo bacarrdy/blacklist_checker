@@ -49,6 +49,7 @@ smtp_ssl_args="-S smtp-use-starttls -S nss-config-dir=/etc/pki/nssdb/ -S ssl-ver
 #and last think is to configure options below
 
 script_use_database=0 # if 0 script will not use database to store all information if 1 it will store all collected data to mysql (dont forget to create database for it, database file can be found www/blacklist/database.sql)
+script_recheck_from_db_h=24 # after what time blacklisted ips in database will be rechecked (time in hours)
 script_database_ip="2.2.2.2"
 script_database_login="root"
 script_database_password="secret"
@@ -99,7 +100,7 @@ if [ "$semail" = 1  ]; then
 fi
 
 if [ "$script_use_database" = 1 ]; then
-        script_database_blocked=`echo "SELECT ip, listName FROM ips_blacked" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name | grep -v ip`
+        script_database_blocked=`echo "SELECT ip, listName FROM ips_blacked WHERE recheck <= DATE_SUB(NOW(), INTERVAL $script_recheck_from_db_h HOUR)" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name | grep -v ip`
         IFS=$'\n'
         for script_result in $script_database_blocked
         do
@@ -110,6 +111,8 @@ if [ "$script_use_database" = 1 ]; then
                 if [ -z "$script_res"  ]; then
                         echo "DELETE FROM ips_blacked WHERE ip LIKE '$script_ip';" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
                         echo "INSERT INTO ips_history (ip, date, action) VALUES ('$script_ip', Now(), 'Removed $script_blacklist');" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
+                else
+                        echo "UPDATE ips_blacked SET recheck=Now() WHERE ip like '$script_ip';" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
                 fi
         done
 fi
@@ -215,14 +218,14 @@ do
                                                         script_curently_blacklisted=0
                                                         if [ "$prompter" = 1  ]; then
                                                                 if [ "$user_notify" = 1  ]; then
-                                                                        echo "INSERT INTO ips_blacked (ip, userID, url, listName, date) VALUES ('$i1.$i2', '$user_email', '$rez_prompter', '$l', Now());" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
+                                                                        echo "INSERT INTO ips_blacked (ip, userID, url, listName, date) VALUES ('$i1.$i2', '$user_email', '$rez_prompter', '$l', Now(), Now());" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
                                                                         echo "INSERT INTO ips_history (ip, date, action, userID) VALUES ('$i1.$i2', Now(), 'Added $l', '$user_email');" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
                                                                 else
-                                                                        echo "INSERT INTO ips_blacked (ip, url, listName, date) VALUES ('$i1.$i2', '$rez_prompter', '$l', Now());" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
+                                                                        echo "INSERT INTO ips_blacked (ip, url, listName, date) VALUES ('$i1.$i2', '$rez_prompter', '$l', Now(), Now());" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
                                                                         echo "INSERT INTO ips_history (ip, date, action) VALUES ('$i1.$i2', Now(), 'Added $l');" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
                                                                 fi
                                                         else
-                                                                echo "INSERT INTO ips_blacked (ip, listName, date) VALUES ('$i1.$i2', '$l', Now());" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
+                                                                echo "INSERT INTO ips_blacked (ip, listName, date) VALUES ('$i1.$i2', '$l', Now(), Now());" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
                                                                 echo "INSERT INTO ips_history (ip, date, action) VALUES ('$i1.$i2', Now(), 'Added $l');" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
                                                         fi
                                                 else
