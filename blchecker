@@ -8,7 +8,7 @@
 dnsserver=
 
 #File name where subnets are stored
-sub=subnets
+sub=sub
 
 #blacklists list
 listas=list
