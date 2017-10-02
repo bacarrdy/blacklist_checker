@@ -37,7 +37,7 @@ smtp_user="smtp_user@server.com"
 smtp_password="smtp_password"
 smtp_from="from@server.com"
 smtp_sender_name="Your company"
-smtp_ssl_args="-S smtp-use-starttls -S nss-config-dir=/etc/pki/nssdb/ -S ssl-verify=ignore"
+smtp_ssl_args=(-S smtp-use-starttls -S nss-config-dir=/etc/pki/nssdb/ -S ssl-verify=ignore)
 
 #If you want to use web interface please confogure options below
 #to use web interface you need LAMP, LEMP (web server, database server (mysql, mariadb) and php witch one supports PDO)
@@ -147,7 +147,7 @@ do
 				if [ ! -z "$EMAIL"  ]; then #do not send email if dont want it
 					if [ "$semail" = 0  ]; then
 						if [ "$use_smtp" = 1  ]; then
-							echo -e $EMAILMESSAGE | mailx -s "BLACKLISTED ips $i1" $smtp_ssl_args -S smtp=smtp://$smtp_srv:$smtp_port -S smtp-auth=login -S smtp-auth-user=$smtp_user -S smtp-auth-password=$smtp_password -S from="$smtp_sender_name <$smtp_from>" $EMAIL
+							echo -e $EMAILMESSAGE | mailx -s "BLACKLISTED ips $i1" "${smtp_ssl_args[@]}" -S smtp=smtp://$smtp_srv:$smtp_port -S smtp-auth=login -S smtp-auth-user=$smtp_user -S smtp-auth-password=$smtp_password -S from="$smtp_sender_name <$smtp_from>" $EMAIL
 						else
 							echo -e $EMAILMESSAGE | mail -s "BLACKLISTED ips $i1" "$EMAIL"
 						fi   
@@ -195,13 +195,13 @@ do
 							#we wont send notifications until we have tested it
 							if [ "$user_notify_test" = 1  ]; then
 								if [ "$use_smtp" = 1  ]; then
-									echo -e "$user_email $USER_EMAILMESSAGE" | mailx -s "$user_subject" $smtp_ssl_args -S smtp=smtp://$smtp_srv:$smtp_port -S smtp-auth=login -S smtp-auth-user=$smtp_user -S smtp-auth-password=$smtp_password -S from="$smtp_sender_name <$smtp_from>" $user_notify_test_email
+									echo -e "$user_email $USER_EMAILMESSAGE" | mailx -s "$user_subject" "${smtp_ssl_args[@]}" -S smtp=smtp://$smtp_srv:$smtp_port -S smtp-auth=login -S smtp-auth-user=$smtp_user -S smtp-auth-password=$smtp_password -S from="$smtp_sender_name <$smtp_from>" $user_notify_test_email
 								else
 									echo -e "$user_email $USER_EMAILMESSAGE" | mail -s "$user_subject" $user_notify_test_email
 								fi		
 							else
 								if [ "$use_smtp" = 1  ]; then
-									echo -e $USER_EMAILMESSAGE | mailx -s "$user_subject" $smtp_ssl_args -S smtp=smtp://$smtp_srv:$smtp_port -S smtp-auth=login -S smtp-auth-user=$smtp_user -S smtp-auth-password=$smtp_password -S from="Sender Name <$smtp_from>" $user_email
+									echo -e $USER_EMAILMESSAGE | mailx -s "$user_subject" "${smtp_ssl_args[@]}" -S smtp=smtp://$smtp_srv:$smtp_port -S smtp-auth=login -S smtp-auth-user=$smtp_user -S smtp-auth-password=$smtp_password -S from="$smtp_sender_name <$smtp_from>" $user_email
 								else
 									echo -e $USER_EMAILMESSAGE | mail -s "$user_subject" $user_email
 								fi						
@@ -246,7 +246,7 @@ do
 			echo "Array empty"
 		else
 			if [ "$use_smtp" = 1  ]; then
-				echo -e  ${mailarr[*]} | mailx -s "BLACKLISTED ips $i1" $smtp_ssl_args -S smtp=smtp://$smtp_srv:$smtp_port -S smtp-auth=login -S smtp-auth-user=$smtp_user -S smtp-auth-password=$smtp_password -S from="$smtp_sender_name <$smtp_from>" $EMAIL
+				echo -e  ${mailarr[*]} | mailx -s "BLACKLISTED ips $i1" "${smtp_ssl_args[@]}" -S smtp=smtp://$smtp_srv:$smtp_port -S smtp-auth=login -S smtp-auth-user=$smtp_user -S smtp-auth-password=$smtp_password -S from="$smtp_sender_name <$smtp_from>" $EMAIL
 			else
 				echo -e  ${mailarr[*]} | mail -s "BLACKLISTED ips $i1" "$EMAIL"
 			fi   
