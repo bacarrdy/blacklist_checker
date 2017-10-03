@@ -218,10 +218,6 @@ user_notify_f () {
 				echo -e $USER_EMAILMESSAGE | mail -s "$user_subject" $user_email
 			fi						
 		fi
-	#else
-		if [ "$script_use_database" = 1 ]; then
-			user_email=""
-		fi
 	#fi
 }
 
