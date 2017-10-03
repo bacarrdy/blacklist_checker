@@ -9,7 +9,7 @@
 dnsserver=
 
 #File name where subnets are stored
-sub=sub
+sub=subnet
 
 #blacklists list
 listas=list
