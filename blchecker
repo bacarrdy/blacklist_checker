@@ -1,4 +1,5 @@
-#!/bin/bash
+#/bin/bash
+
 ##script requires: 
 ##dig 
 ##mail server with mail function (if chosen use_smtp="0")
@@ -12,6 +13,9 @@ sub=sub
 
 #blacklists list
 listas=list
+
+#show only blocked ips
+show_only_blocked=1
 
 #sleep between subnets
 ssub=2s
@@ -30,12 +34,12 @@ prompter_phone=111111
 prompter_email=$EMAIL #you can enter any other email if you want
 
 
-use_smtp="0" # requires package mailx if 1 then emails will be sent via smtp if 0 via mail server
+use_smtp="1" # requires package mailx if 1 then emails will be sent via smtp if 0 via mail server
 smtp_srv="smt.server.com"
 smtp_port="25"
 smtp_user="smtp_user@server.com"
 smtp_password="smtp_password"
-smtp_from="from@server.com"
+smtp_from="no-replay@server.com"
 smtp_sender_name="Your company"
 smtp_ssl_args=(-S smtp-use-starttls -S nss-config-dir=/etc/pki/nssdb/ -S ssl-verify=ignore)
 
@@ -50,7 +54,7 @@ smtp_ssl_args=(-S smtp-use-starttls -S nss-config-dir=/etc/pki/nssdb/ -S ssl-ver
 
 script_use_database=0 # if 0 script will not use database to store all information if 1 it will store all collected data to mysql (dont forget to create database for it, database file can be found www/blacklist/database.sql)
 script_recheck_from_db_h=24 # after what time blacklisted ips in database will be rechecked (time in hours)
-script_database_ip="2.2.2.2"
+script_database_ip="localhost"
 script_database_login="root"
 script_database_password="secret"
 script_database_name="blacklist"
@@ -66,7 +70,7 @@ script_database_name="blacklist"
 user_notify=0
 user_notify_test=1 #if 1 = enabled if enabled then it will send email to your specified email address
 user_notify_test_email=$EMAIL #you can setup test email
-notify_database_ip="1.1.1.1"
+notify_database_ip="localhost"
 notify_database_login="root"
 notify_database_password="secret"
 notify_database_name="an_database"
@@ -75,6 +79,9 @@ notify_database_name="an_database"
 #for crontabs we need to know where script is placed
 workdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+#lest make shorted mysql connect arguments
+script_database_mysql=(-u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name)
+notify_database_mysql=(-u$notify_database_login -h$notify_database_ip -p$notify_database_password $notify_database_name)
 
 #Possibillity to add variables from CLI
 #For example:
@@ -94,30 +101,178 @@ do
  esac
 done
 
-
 if [ "$semail" = 1  ]; then
 	declare -a mailarr
 fi
 
+#check ip function
+checkip_f () {
+    if [ -z "$dnsserver"  ]; then
+        dig +short $1.$2 | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep 127.0.*
+    else
+        dig +short @$dnsserver $1.$2 | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep 127.0.*
+    fi
+}
+
+#reverse ip function
+reverseip_f () {
+	local IFS
+	IFS=.
+	set -- $1
+	echo $4.$3.$2.$1
+}
+
+#recheck blacklisted ips from database function
+check_curent_records_in_db_f () {
+    local script_database_blocked
+    local IFS
+    local script_ip
+    local script_blacklist
+    local script_ip_reverse
+    local script_res
+    script_database_blocked=`echo "SELECT ip, listName FROM ips_blacked WHERE recheck <= DATE_SUB(NOW(), INTERVAL $script_recheck_from_db_h HOUR);" | mysql "${script_database_mysql[@]}"  | grep -v ip`
+    IFS=$'\n'
+    for script_result in $script_database_blocked
+    do
+        script_ip=`echo $script_result | awk {'print $1'}`
+        script_blacklist=`echo $script_result | awk {'print $2'}`
+        script_ip_reverse=$(reverseip_f $script_ip)
+        script_res=$(checkip_f $script_ip_reverse $script_blacklist)
+        if [ -z "$script_res"  ]; then
+            echo "DELETE FROM ips_blacked WHERE ip LIKE '$script_ip';" | mysql "${script_database_mysql[@]}"
+            echo "INSERT INTO ips_history (ip, date, action) VALUES ('$script_ip', Now(), 'Removed $script_blacklist');" | mysql "${script_database_mysql[@]}"
+        else
+            echo "UPDATE ips_blacked SET recheck=Now() WHERE ip like '$script_ip';" | mysql "${script_database_mysql[@]}"
+        fi
+    done
+}
+
+prompter_f () {
+	rez_prompter=`cat $workdir/prompter | grep -v "#" | grep $1 | awk '{print $2}' |  sed "s/{{ip}}/$3/g" | sed "s/{{phone}}/$prompter_phone/g" | sed "s/{{email}}/$prompter_email/g"`
+	if [ ! -z "$rez_prompter"  ]; then
+		EMAILMESSAGE=`echo "ip $3 blacklisted on $1 list - gotten result $2\n$rez_prompter\n\n"`
+	else
+		EMAILMESSAGE=`echo "ip $3 blacklisted on $1 list - gotten result $2\n\n"`
+	fi
+}
+
+sendemail_f () {
+	if [ "$semail" = 0  ]; then
+		if [ "$use_smtp" = 1  ]; then
+			echo -e $EMAILMESSAGE | mailx -s "BLACKLISTED ips $i1" "${smtp_ssl_args[@]}" -S smtp=smtp://$smtp_srv:$smtp_port -S smtp-auth=login -S smtp-auth-user=$smtp_user -S smtp-auth-password=$smtp_password -S from="$smtp_sender_name <$smtp_from>" $EMAIL
+		else
+			echo -e $EMAILMESSAGE | mail -s "BLACKLISTED ips $i1" "$EMAIL"
+		fi   
+	else
+		mailarr+=($EMAILMESSAGE)
+	fi
+}
+
+user_notify_f () {
+	#users notification about blocked ips
+	#database query to get or ip is actyve (only in my system there is lis of actyve or no ips list thats why i have comented it out)
+	#user_ip_used=`echo "SELECT ROW_WHERE_INFO_OF_IP_USED FROM IPS_TABLE WHERE ROW_IPS LIKE '$i1.$i2';" | mysql "${notify_database_mysql[@]}" | grep -v ROW_WHERE_INFO_OF_IP_USED`
+	#if [ "$user_ip_used" = true  ]; then # answer from db in your system may be different or it dos not exists in your system and it is only example
+		#lets check who own ip
+		#getting orderid
+		user_order_id=`echo "SELECT ORDER_ID FROM IPS_TABLE WHERE ROW_IPS LIKE '$i1.$i2';" | mysql "${notify_database_mysql[@]}" | grep -v ORDER_ID`
+		#we do not want to send emails if there is no actyve server
+		if [ "$user_order_id" = 0  ]; then
+			echo "no order id"
+			if [ "$script_use_database" = 1 ]; then
+				user_email=""
+			fi
+		else
+			#geting clientid
+			user_client_id=`echo "SELECT CLIENT_ID FROM YOUR_ORDERS WHERE ID LIKE '$user_order_id';" | mysql "${notify_database_mysql[@]}" | grep -v CLIENT_ID`
+			#geting user data witch one we will use to send email notification about blocked ip
+			user_client_data=`echo "SELECT FIRST_NAME,LAST_NAME,EMAIL,USER_LANGUAGE FROM CLIENTS_TABLE WHERE id LIKE '$user_client_id';" | mysql "${notify_database_mysql[@]}" | grep -v FIRST_NAME`
+			user_language=`echo $user_client_data | awk '{print $4}'`
+			user_f_name=`echo $user_client_data | awk '{print $1}'`
+			user_l_name=`echo $user_client_data | awk '{print $2}'`
+			user_email=`echo $user_client_data | awk '{print $3}'`
+			user_rez_prompter=`cat $workdir/prompter | grep -v "#" | grep $l | awk '{print $2}' |  sed "s/{{ip}}/$i1.$i2/g" | sed "s/{{phone}}/$prompter_phone/g" | sed "s/{{email}}/$user_email/g"`
+			#now lets generate few different types of messages because in my system there is more then one language
+			if [ "$user_language" = en  ]; then
+				user_subject="Your server ip address is blacklisted"
+				USER_EMAILMESSAGE="Hello $user_f_name $user_l_name,\n\nWe have detected that one of yours server ip address $i1.$i2 have been blacklisted in $l.\nPlease remove blacklist as soon as it possible - to do it please follow link below\n$user_rez_prompter\n\nThank you.\n\n--\n\nRegards,\nYOUR_ORGANIZATION Administration"
+			elif [ "$user_language" = lt  ]; then
+				user_subject="Jūsų serverio ip adresas yra blacklistintas"
+				USER_EMAILMESSAGE="Sveiki $user_f_name $user_l_name,\n\nAptikome, kad vienas iš jūsų serverio ip adresų $i1.$i2 yra blokuojamas $l blackliste.\nPrašome pašalinti blacklistą kaip įmanoma greičiau - informacija kaip tai padaryti rasite nuorodoje žemiau\n$user_rez_prompter\n\nDėkojame.\n\n--\n\nPagarbiai,\nYOUR_ORGANIZATION Administracija"
+			else
+				user_subject="Your server ip address is blacklisted"
+				USER_EMAILMESSAGE="Hello $user_f_name $user_l_name,\n\nWe have detected that one of yurs server ip address $i1.$i2 have been blacklisted in $l.\nPlease remove blacklist as soon as it possible - to do it please follow link below\n$user_rez_prompter\n\nThank you.\n\n--\n\nRegards,\nYOUR_ORGANIZATION Administration"
+			fi
+		#lets send notification to users
+		#we wont send notifications until we have tested it
+		if [ "$user_notify_test" = 1  ]; then
+			if [ "$use_smtp" = 1  ]; then
+				echo -e "$user_email $USER_EMAILMESSAGE" | mailx -s "$user_subject" "${smtp_ssl_args[@]}" -S smtp=smtp://$smtp_srv:$smtp_port -S smtp-auth=login -S smtp-auth-user=$smtp_user -S smtp-auth-password=$smtp_password -S from="$smtp_sender_name <$smtp_from>" $user_notify_test_email
+			else
+				echo -e "$user_email $USER_EMAILMESSAGE" | mail -s "$user_subject" $user_notify_test_email
+			fi		
+		else
+			if [ "$use_smtp" = 1  ]; then
+				echo -e $USER_EMAILMESSAGE | mailx -s "$user_subject" "${smtp_ssl_args[@]}" -S smtp=smtp://$smtp_srv:$smtp_port -S smtp-auth=login -S smtp-auth-user=$smtp_user -S smtp-auth-password=$smtp_password -S from="$smtp_sender_name <$smtp_from>" $user_email
+			else
+				echo -e $USER_EMAILMESSAGE | mail -s "$user_subject" $user_email
+			fi						
+		fi
+	#else
+		if [ "$script_use_database" = 1 ]; then
+			user_email=""
+		fi
+	#fi
+}
+
+use_database_f () {
+    script_or_blacklisted=`echo "SELECT ip FROM ips_blacked WHERE ip LIKE '$1' AND listName LIKE '$2';" | mysql "${script_database_mysql[@]}" | grep -v ip`
+    if [ -z "$script_or_blacklisted"  ]; then
+        if [ "$prompter" = 1  ]; then
+            if [ "$user_notify" = 1  ]; then
+                echo "INSERT INTO ips_blacked (ip, userID, url, listName, date, recheck) VALUES ('$1', '$user_email', '$rez_prompter', '$2', Now(), Now());" | mysql "${script_database_mysql[@]}"
+                echo "INSERT INTO ips_history (ip, date, action, userID) VALUES ('$1', Now(), 'Added $2', '$user_email');" | mysql "${script_database_mysql[@]}"
+            else
+                echo "INSERT INTO ips_blacked (ip, url, listName, date, recheck) VALUES ('$1', '$rez_prompter', '$2', Now(), Now());" | mysql "${script_database_mysql[@]}"
+                echo "INSERT INTO ips_history (ip, date, action) VALUES ('$1', Now(), 'Added $2');" | mysql "${script_database_mysql[@]}"
+            fi
+        else
+            echo "INSERT INTO ips_blacked (ip, listName, date, recheck) VALUES ('$1', '$2', Now(), Now());" | mysql "${script_database_mysql[@]}"
+            echo "INSERT INTO ips_history (ip, date, action) VALUES ('$1', Now(), 'Added $2');" | mysql "${script_database_mysql[@]}"
+        fi
+    fi
+}
+
+lets_go_f () {
+	res=$(checkip_f $1 $3)
+	if [ ! -z "$res"  ]; then
+		if [ "$prompter" = 1  ]; then
+			prompter_f $3 $res $2
+		else
+			EMAILMESSAGE=`echo "ip $2 blacklisted on $3 list - gotten result $res\n"`
+		fi
+		if [ ! -z "$EMAIL"  ]; then #do not send email if dont want it
+			sendemail_f $4
+		fi
+		if [ "$user_notify" = 1  ]; then
+			user_notify_f
+		fi
+		if [ "$script_use_database" = 1 ]; then
+			use_database_f $2 $3
+		fi
+		echo "ip $2 blacklisted on $3 list - gotten result $res"
+	else
+		if [ "$show_only_blocked" = 0 ]; then
+			echo "ip $2 not blacklisted on $3 list - gotten result $res"
+		fi
+	fi
+
+}
+
 if [ "$script_use_database" = 1 ]; then
-        script_database_blocked=`echo "SELECT ip, listName FROM ips_blacked WHERE recheck <= DATE_SUB(NOW(), INTERVAL $script_recheck_from_db_h HOUR);" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name | grep -v ip`
-        IFS=$'\n'
-        for script_result in $script_database_blocked
-        do
-                script_ip=`echo $script_result | awk {'print $1'}`
-                script_blacklist=`echo $script_result | awk {'print $2'}`
-                script_ip_reverse=`echo $script_ip |awk -F"." '{for(i=NF;i>0;i--) printf i!=1?$i".":"%s",$i}'`
-                script_res=`dig +short $script_ip_reverse.$script_blacklist | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep 127.0.*`
-                if [ -z "$script_res"  ]; then
-                        echo "DELETE FROM ips_blacked WHERE ip LIKE '$script_ip';" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
-                        echo "INSERT INTO ips_history (ip, date, action) VALUES ('$script_ip', Now(), 'Removed $script_blacklist');" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
-                else
-                        echo "UPDATE ips_blacked SET recheck=Now() WHERE ip like '$script_ip';" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
-                fi
-        done
+	check_curent_records_in_db_f
 fi
-
-
+	
 while read i;
 do
 	i1=`echo $i | awk '{print $1}'`
@@ -125,126 +280,24 @@ do
 	i3=`echo $i | awk '{print $3}'`
 	while [[ $i2 -le $i3 ]]
 	do
-		ip=`echo $i1.$i2 |awk -F"." '{for(i=NF;i>0;i--) printf i!=1?$i".":"%s",$i}'`
+		ip=$(reverseip_f $i1.$i2)
 		for l in $(cat $workdir/$listas | grep -v "#")
 		do
 			if [ "$script_use_database" = 1 ]; then
-				script_ip_curent_listed=`echo "SELECT ip, listName FROM ips_blacked WHERE ip LIKE "$i1.$i2" AND recheck <= DATE_SUB(NOW(), INTERVAL $script_recheck_from_db_h HOUR)" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name | grep -v ip`
-				if [ -z "$script_ip_curent_listed" ]; then
-					if [ -z "$dnsserver"  ]; then
-						res=`dig +short $ip.$l | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep 127.0.*`
+				script_ip_curent_exists=`echo "SELECT ip, listName FROM ips_blacked WHERE ip LIKE '$i1.$i2' AND listName LIKE '$l';" | mysql "${script_database_mysql[@]}" | grep -v ip`
+				if [ ! -z "$script_ip_curent_exists" ]; then
+					script_ip_curent_listed=`echo "SELECT ip, listName FROM ips_blacked WHERE ip LIKE '$i1.$i2' AND listName LIKE '$l' AND recheck < DATE_SUB(NOW(), INTERVAL $script_recheck_from_db_h HOUR);" | mysql "${script_database_mysql[@]}" | grep -v ip`
+					if [ ! -z "$script_ip_curent_listed" ]; then
+						lets_go_f $ip $i1.$i2 $l $i1
 					else
-						res=`dig +short @$dnsserver $ip.$l | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep 127.0.*`
-					fi
-				fi
-			else					
-				if [ -z "$dnsserver"  ]; then
-					res=`dig +short $ip.$l | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep 127.0.*`
-				else
-					res=`dig +short @$dnsserver $ip.$l | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep 127.0.*`
-				fi
-				if [ ! -z "$res"  ]; then		
-					if [ "$prompter" = 1  ]; then
-						rez_prompter=`cat $workdir/prompter | grep -v "#" | grep $l | awk '{print $2}' |  sed "s/{{ip}}/$i1.$i2/g" | sed "s/{{phone}}/$prompter_phone/g" | sed "s/{{email}}/$prompter_email/g"`
-						if [ ! -z "$rez_prompter"  ]; then
-							EMAILMESSAGE=`echo "ip $i1.$i2 blacklisted on $l list - gotten result $res\n$rez_prompter\n\n"`
-						else
-							EMAILMESSAGE=`echo "ip $i1.$i2 blacklisted on $l list - gotten result $res\n\n"`
-						fi
-					else
-						EMAILMESSAGE=`echo "ip $i1.$i2 blacklisted on $l list - gotten result $res\n"`
-					fi
-					if [ ! -z "$EMAIL"  ]; then #do not send email if dont want it
-						if [ "$semail" = 0  ]; then
-							if [ "$use_smtp" = 1  ]; then
-								echo -e $EMAILMESSAGE | mailx -s "BLACKLISTED ips $i1" "${smtp_ssl_args[@]}" -S smtp=smtp://$smtp_srv:$smtp_port -S smtp-auth=login -S smtp-auth-user=$smtp_user -S smtp-auth-password=$smtp_password -S from="$smtp_sender_name <$smtp_from>" $EMAIL
-							else
-								echo -e $EMAILMESSAGE | mail -s "BLACKLISTED ips $i1" "$EMAIL"
-							fi   
-						else
-							mailarr+=($EMAILMESSAGE)
-						fi
-					fi
-					echo $EMAILMESSAGE
-					#users notification about blocked ips
-					if [ "$user_notify" = 1  ]; then
-						#database query to get or ip is actyve (only in my system there is lis of actyve or no ips list thats why i have comented it out)
-						#user_ip_used=`echo "SELECT ROW_WHERE_INFO_OF_IP_USED FROM IPS_TABLE WHERE ROW_IPS LIKE '$i1.$i2';" | mysql -u$notify_database_login -h$notify_database_ip -p$notify_database_password $notify_database_name | grep -v ROW_WHERE_INFO_OF_IP_USED`
-						#if [ "$user_ip_used" = true  ]; then # answer from db in your system may be different or it dos not exists in your system and it is only example
-							#lets check who own ip
-							#getting orderid
-							user_order_id=`echo "SELECT ORDER_ID FROM IPS_TABLE WHERE ROW_IPS LIKE '$i1.$i2';" | mysql -u$notify_database_login -h$notify_database_ip -p$notify_database_password $notify_database_name | grep -v ORDER_ID`
-							#we do not want to send emails if there is no actyve server
-							if [ "$user_order_id" = 0  ]; then
-								echo "no order id"
-                                                	        if [ "$script_use_database" = 1 ]; then
-                                                        	        user_email=""
-                                                        	fi
-							else
-								#geting clientid
-								user_client_id=`echo "SELECT CLIENT_ID FROM YOUR_ORDERS WHERE ID LIKE '$user_order_id';" | mysql -u$notify_database_login -h$notify_database_ip -p$notify_database_password $notify_database_name | grep -v CLIENT_ID`
-								#geting user data witch one we will use to send email notification about blocked ip
-								user_client_data=`echo "SELECT FIRST_NAME,LAST_NAME,EMAIL,USER_LANGUAGE FROM CLIENTS_TABLE WHERE id LIKE '$user_client_id';" | mysql -u$notify_database_login -h$notify_database_ip -p$notify_database_password $notify_database_name | grep -v FIRST_NAME`
-								user_language=`echo $user_client_data | awk '{print $4}'`
-								user_f_name=`echo $user_client_data | awk '{print $1}'`
-								user_l_name=`echo $user_client_data | awk '{print $2}'`
-								user_email=`echo $user_client_data | awk '{print $3}'`
-								user_rez_prompter=`cat $workdir/prompter | grep -v "#" | grep $l | awk '{print $2}' |  sed "s/{{ip}}/$i1.$i2/g" | sed "s/{{phone}}/$prompter_phone/g" | sed "s/{{email}}/$user_email/g"`
-								#now lets generate few different types of messages because in my system there is more then one language
-								if [ "$user_language" = en  ]; then
-									user_subject="Your server ip address is blacklisted"
-									USER_EMAILMESSAGE="Hello $user_f_name $user_l_name,\n\nWe have detected that one of yours server ip address $i1.$i2 have been blacklisted in $l.\nPlease remove blacklist as soon as it possible - to do it please follow link below\n$user_rez_prompter\n\nThank you.\n\n--\n\nRegards,\nYOUR_ORGANIZATION Administration"
-								elif [ "$user_language" = lt  ]; then
-									user_subject="Jūsų serverio ip adresas yra blacklistintas"
-									USER_EMAILMESSAGE="Sveiki $user_f_name $user_l_name,\n\nAptikome, kad vienas iš jūsų serverio ip adresų $i1.$i2 yra blokuojamas $l blackliste.\nPrašome pašalinti blacklistą kaip įmanoma greičiau - informacija kaip tai padaryti rasite nuorodoje žemiau\n$user_rez_prompter\n\nDėkojame.\n\n--\n\nPagarbiai,\nYOUR_ORGANIZATION Administracija"
-								else
-									user_subject="Your server ip address is blacklisted"
-									USER_EMAILMESSAGE="Hello $user_f_name $user_l_name,\n\nWe have detected that one of yurs server ip address $i1.$i2 have been blacklisted in $l.\nPlease remove blacklist as soon as it possible - to do it please follow link below\n$user_rez_prompter\n\nThank you.\n\n--\n\nRegards,\nYOUR_ORGANIZATION Administration"
-								fi
-								#lets send notification to users
-								#we wont send notifications until we have tested it
-								if [ "$user_notify_test" = 1  ]; then
-									if [ "$use_smtp" = 1  ]; then
-										echo -e "$user_email $USER_EMAILMESSAGE" | mailx -s "$user_subject" "${smtp_ssl_args[@]}" -S smtp=smtp://$smtp_srv:$smtp_port -S smtp-auth=login -S smtp-auth-user=$smtp_user -S smtp-auth-password=$smtp_password -S from="$smtp_sender_name <$smtp_from>" $user_notify_test_email
-									else
-										echo -e "$user_email $USER_EMAILMESSAGE" | mail -s "$user_subject" $user_notify_test_email
-									fi		
-								else
-									if [ "$use_smtp" = 1  ]; then
-										echo -e $USER_EMAILMESSAGE | mailx -s "$user_subject" "${smtp_ssl_args[@]}" -S smtp=smtp://$smtp_srv:$smtp_port -S smtp-auth=login -S smtp-auth-user=$smtp_user -S smtp-auth-password=$smtp_password -S from="$smtp_sender_name <$smtp_from>" $user_email
-									else
-										echo -e $USER_EMAILMESSAGE | mail -s "$user_subject" $user_email
-									fi						
-								fi
-							fi
-						#else
-                                        		if [ "$script_use_database" = 1 ]; then
-                                                		user_email=""
-                                                	fi
-						#fi
-                                        	if [ "$script_use_database" = 1 ]; then
-                                                	script_or_blacklisted=`echo "SELECT ip FROM ips_blacked WHERE ip LIKE '$i1.$i2' AND listName LIKE '$l';" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name | grep -v ip`
-                                                	if [ -z "$script_or_blacklisted"  ]; then
-                                                        	if [ "$prompter" = 1  ]; then
-                                                                	if [ "$user_notify" = 1  ]; then
-                                                                        	echo "INSERT INTO ips_blacked (ip, userID, url, listName, date) VALUES ('$i1.$i2', '$user_email', '$rez_prompter', '$l', Now(), Now());" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
-                                                                        	echo "INSERT INTO ips_history (ip, date, action, userID) VALUES ('$i1.$i2', Now(), 'Added $l', '$user_email');" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
-                                                                	else
-                                                                        	echo "INSERT INTO ips_blacked (ip, url, listName, date) VALUES ('$i1.$i2', '$rez_prompter', '$l', Now(), Now());" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
-                                                                        	echo "INSERT INTO ips_history (ip, date, action) VALUES ('$i1.$i2', Now(), 'Added $l');" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
-                                                                	fi
-                                                        	else
-                                                                	echo "INSERT INTO ips_blacked (ip, listName, date) VALUES ('$i1.$i2', '$l', Now(), Now());" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
-                                                                	echo "INSERT INTO ips_history (ip, date, action) VALUES ('$i1.$i2', Now(), 'Added $l');" | mysql -u$script_database_login -h$script_database_ip -p$script_database_password $script_database_name
-                                                        	fi
-                                                	fi
-                                        	fi
+						echo "This ip is curently listed and it is no time to check it again"
 					fi
 				else
-					echo "ip $i1.$i2 not blacklisted on $l list - gotten result $res"
+					lets_go_f $ip $i1.$i2 $l $i1
 				fi
-				sleep $sblck
-			fi
+			else
+				lets_go_f $ip $i1.$i2 $l $i1
+			fi				
 		done
 		((i2 = i2 + 1))
 		sleep $sip
@@ -260,6 +313,6 @@ do
 			fi   
 		fi
 		unset mailarr
-	fi
+	fi			
 sleep $ssub
 done <$workdir/$sub
