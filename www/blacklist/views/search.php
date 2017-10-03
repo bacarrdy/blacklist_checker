@@ -7,6 +7,9 @@
 				
                     <div class="col-md-12">
                         <div class="card">
+						
+						<?php if ($searchActive) { ?>
+
                             <div class="header">
                                 <h4 class="title">IPs List (<?=$numOfIps;?>)</h4>
                             </div>
@@ -14,13 +17,11 @@
                                 <table class="table table-striped">
                                     <thead>
 										<tr>
-											<th>#</th>
 											<th>
 												<a href="<?=$tx->sortUrl( array(0,1) );?>">
 													<?=$tx->sortView( array(0,1) );?> IP
 												</a>
 											</th>
-											<th>In</th>
 											<th>
 												<a href="<?=$tx->sortUrl( array(2,3) );?>">
 													<?=$tx->sortView( array(2,3) );?> User ID
@@ -37,17 +38,18 @@
                                     <tbody>
 										<?php if ($numOfIps > 0) { ?>
 											<?php foreach($records as $record) { ?>
+												<?php if ($record['inBlackList']) { ?>
+												<tr class="danger">
+												<?php }else if ($record['noAction']) { ?>
+												<tr class="warning">
+												<?php } else { ?>
 												<tr>
-													<td><?=$record['id'];?></td>
+												<?php } ?>
 													<td><?=$record['ip'];?></td>
-													<td><?=$record['in'];?></td>
-													<td><?=$record['userID'];?></td>
-													<td><?=$record['date'];?></td>
+													<td><?=$record['lastOwner'];?></td>
+													<td><?=$record['lastDate'];?></td>
 													<td>
 														<div class="btn-group" role="group" aria-label="...">
-															<?php if (!empty($record['url'])) { ?>
-															<a href="<?=$record['url'];?>" target="_blank" class="btn btn-default">Url</a>
-															<?php } ?>
 															<button type="button" class="btn btn-default" data-toggle="modal" data-ip="<?=$record['ip'];?>" data-target="#historyModal">History</button>
 														</div>
 													</td>
@@ -55,7 +57,7 @@
 											<?php } ?>
 										<?php } else { ?>
                                         <tr>
-                                        	<td colspan=6 style="text-align: center;">No black listed IPs!</td>
+                                        	<td colspan=5 style="text-align: center;">No black listed IPs!</td>
                                         </tr>
 										<?php } ?>
                                     </tbody>
@@ -64,6 +66,59 @@
 									<?=$pagination;?>
 								<?php } ?>
                             </div>
+						
+						<?php } else{ ?>
+							
+                            <div class="header">
+                                <h4 class="title">Search</h4>
+                            </div>
+                            <div class="content">
+
+                                <form method="get">
+
+                                    <div class="row">
+                                        <div class="col-md-4">
+											<div class="row">
+												<div class="col-md-10">
+													<div class="form-group">
+														<label>IP</label>
+														<input type="text" name="ip" class="form-control border-input" placeholder="127.0.0.1 OR 127.0.0.*" value="">
+													</div>
+												</div>
+											</div>
+                                        </div>
+                                        <div class="col-md-4">
+											<div class="row">
+												<div class="col-md-10">
+													<div class="form-group">
+														<label>User ID</label>
+														<input type="text" name="userID" class="form-control border-input" placeholder="email@email.com" value="">
+													</div>
+												</div>
+											</div>
+                                        </div>
+                                        <div class="col-md-4">
+											<div class="row">
+												<div class="col-md-10">
+													<div class="form-group">
+														<label>No action in X days</label>
+														<input type="text" name="noActionDays" class="form-control border-input" placeholder="0 OR 3 OR 10" value="">
+													</div>
+												</div>
+											</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="text-center">
+                                        <button type="submit" class="btn btn-info btn-fill btn-wd" name="search" value="true">Search</button>
+                                    </div>
+                                    <div class="clearfix"></div>
+                                </form>
+							
+                            </div>
+							
+						<?php } ?>
+							
                         </div>
                     </div>
 

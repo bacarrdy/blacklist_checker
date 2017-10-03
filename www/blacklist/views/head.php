@@ -42,16 +42,22 @@
 
     	<div class="sidebar-wrapper">
             <div class="logo">
-                <a href="<?=$baseOfUrl;?>" class="simple-text">
+                <a href="<?=$baseOfUrl;?>home" class="simple-text">
                     BlackList Manager
                 </a>
             </div>
 
             <ul class="nav">
                 <li class="active">
-                    <a href="<?=$baseOfUrl;?>">
+                    <a href="<?=$baseOfUrl;?>home">
                         <i class="ti-pie-chart"></i>
                         <p>BlackListed IPs</p>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?=$baseOfUrl;?>search">
+                        <i class="ti-pie-chart"></i>
+                        <p>Search</p>
                     </a>
                 </li>
 
