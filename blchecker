@@ -139,10 +139,10 @@ check_curent_records_in_db_f () {
         script_ip_reverse=$(reverseip_f $script_ip)
         script_res=$(checkip_f $script_ip_reverse $script_blacklist)
         if [ -z "$script_res"  ]; then
-            echo "DELETE FROM ips_blacked WHERE ip LIKE '$script_ip';" | mysql "${script_database_mysql[@]}"
+            echo "DELETE FROM ips_blacked WHERE ip LIKE '$script_ip' AND listName LIKE '$script_blacklist';" | mysql "${script_database_mysql[@]}"
             echo "INSERT INTO ips_history (ip, date, action) VALUES ('$script_ip', Now(), 'Removed $script_blacklist');" | mysql "${script_database_mysql[@]}"
         else
-            echo "UPDATE ips_blacked SET recheck=Now() WHERE ip like '$script_ip';" | mysql "${script_database_mysql[@]}"
+            echo "UPDATE ips_blacked SET recheck=Now() WHERE ip like '$script_ip' AND listName LIKE '$script_blacklist';" | mysql "${script_database_mysql[@]}"
         fi
     done
 }
@@ -236,6 +236,8 @@ use_database_f () {
             echo "INSERT INTO ips_blacked (ip, listName, date, recheck) VALUES ('$1', '$2', Now(), Now());" | mysql "${script_database_mysql[@]}"
             echo "INSERT INTO ips_history (ip, date, action) VALUES ('$1', Now(), 'Added $2');" | mysql "${script_database_mysql[@]}"
         fi
+    else
+        echo "UPDATE ips_blacked SET recheck=Now() WHERE ip LIKE '$1' AND listName LIKE '$2';" | mysql "${script_database_mysql[@]}"
     fi
 }
 
