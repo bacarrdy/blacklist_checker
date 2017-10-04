@@ -283,6 +283,36 @@ lets_go_f () {
 
 }
 
+clear
+echo ""
+echo ""
+echo "IP blacklist checker"
+echo "You can configure script seting up variables inside script"
+echo "Or you can set some parameters directly runing script"
+echo "These parameters are:"
+echo "You can use not all parameters, for example you can use only -s subnets2 - then all other parameters will be taken from inside of script"
+echo ""
+echo "   -l - file where stored blacklists"
+echo "   -s - file where stored subnets"
+echo "   -n - SMTP sender name"
+echo "   -e - Email to what blacked ips will be sent"
+echo ""
+echo ""
+echo "Blacklist checking process started with folowing configuration:"
+echo ""
+echo "Blacklists file:                 $listas"
+echo "Subnets file:                    $sub"
+echo "Email what will get blocked ips: $EMAIL"
+echo "Show only blocked ips:           $show_only_blocked"
+echo "Will we use SMTP?:               $use_smtp"
+echo "SMTP sender name:                $smtp_sender_name"
+echo "Will we use prompter:            $prompter"
+echo "Will we use database:            $script_use_database"
+echo "Will we use user notification:   $user_notify"
+echo "Script working directory:        $workdir"
+echo "DNS server used by script:       $dnsserver"
+
+
 while read i;
 do
 	i1=`echo $i | awk '{print $1}'`
