@@ -344,7 +344,9 @@ main_control_f () {
                                 echo -e  ${mailarr[*]} | mail -s "BLACKLISTED ips $i1" "$EMAIL"
                         fi
                 fi
-                unset mailarr
+		if [ $run_in_background = 0 ]; then
+                	unset mailarr
+		fi
         fi
 }
 
@@ -403,13 +405,16 @@ if [ $all_subnets_files = 1 ]; then
 			i1=`echo $i | awk '{print $1}'`
 			i2=`echo $i | awk '{print $2}'`
 			i3=`echo $i | awk '{print $3}'`
-			if [ $run_in_background = 1 ];then
+			if [ $run_in_background = 1 ]; then
 				main_control_f $i1 $i2 $i3 &
 			else
 				main_control_f $i1 $i2 $i3
 				sleep $ssub
 			fi
-		done <$workdir/$subnet_files
+		done <$subnet_files
+		if [ $run_in_background = 1 ]; then
+                	unset mailarr
+                fi
 	done
 else
 	while read i;
