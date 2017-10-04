@@ -286,7 +286,7 @@ do
 					if [ ! -z "$script_ip_curent_listed" ]; then
 						lets_go_f $ip $i1.$i2 $l $i1
 					else
-						echo "This ip is curently listed and it is no time to check it again"
+						echo "IP: $i1.$i2 is curently listed in $l and it is no time to check it again"
 					fi
 				else
 					lets_go_f $ip $i1.$i2 $l $i1
