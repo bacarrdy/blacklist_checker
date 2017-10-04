@@ -123,29 +123,27 @@ reverseip_f () {
 }
 
 #recheck blacklisted ips from database function
-check_curent_records_in_db_f () {
-    local script_database_blocked
-    local IFS
-    local script_ip
-    local script_blacklist
-    local script_ip_reverse
-    local script_res
-    script_database_blocked=`echo "SELECT ip, listName FROM ips_blacked WHERE recheck <= DATE_SUB(NOW(), INTERVAL $script_recheck_from_db_h HOUR);" | mysql "${script_database_mysql[@]}"  | grep -v ip`
-    IFS=$'\n'
-    for script_result in $script_database_blocked
-    do
-        script_ip=`echo $script_result | awk {'print $1'}`
-        script_blacklist=`echo $script_result | awk {'print $2'}`
-        script_ip_reverse=$(reverseip_f $script_ip)
-        script_res=$(checkip_f $script_ip_reverse $script_blacklist)
-        if [ -z "$script_res"  ]; then
-            echo "DELETE FROM ips_blacked WHERE ip LIKE '$script_ip' AND listName LIKE '$script_blacklist';" | mysql "${script_database_mysql[@]}"
-            echo "INSERT INTO ips_history (ip, date, action) VALUES ('$script_ip', Now(), 'Removed $script_blacklist');" | mysql "${script_database_mysql[@]}"
-        else
-            echo "UPDATE ips_blacked SET recheck=Now() WHERE ip like '$script_ip' AND listName LIKE '$script_blacklist';" | mysql "${script_database_mysql[@]}"
-        fi
-    done
-}
+#check_curent_records_in_db_f () {
+#    local script_database_blocked
+#    local IFS
+#    local script_ip
+#    local script_blacklist
+#    local script_ip_reverse
+#    local script_res
+#    script_database_blocked=`echo "SELECT ip, listName FROM ips_blacked WHERE ip LIKE '$1' AND recheck <= DATE_SUB(NOW(), INTERVAL $script_recheck_from_db_h HOUR);" | mysql "${script_database_mysql[@]}"  | grep -v ip`
+#    IFS=$'\n'
+#    for script_result in $script_database_blocked
+#    do
+#        script_ip=`echo $script_result | awk {'print $1'}`
+#        script_blacklist=`echo $script_result | awk {'print $2'}`
+#        script_ip_reverse=$(reverseip_f $script_ip)
+#        script_res=$(checkip_f $script_ip_reverse $script_blacklist)
+#        if [ -z "$script_res"  ]; then
+#            echo "DELETE FROM ips_blacked WHERE ip LIKE '$script_ip' AND listName LIKE '$script_blacklist';" | mysql "${script_database_mysql[@]}"
+#            echo "INSERT INTO ips_history (ip, date, action) VALUES ('$script_ip', Now(), 'Removed $script_blacklist');" | mysql "${script_database_mysql[@]}"
+#        fi
+#    done
+#}
 
 prompter_f () {
 	rez_prompter=`cat $workdir/prompter | grep -v "#" | grep $1 | awk '{print $2}' |  sed "s/{{ip}}/$3/g" | sed "s/{{phone}}/$prompter_phone/g" | sed "s/{{email}}/$prompter_email/g"`
@@ -222,7 +220,7 @@ user_notify_f () {
 }
 
 use_database_f () {
-    script_or_blacklisted=`echo "SELECT ip FROM ips_blacked WHERE ip LIKE '$1' AND listName LIKE '$2';" | mysql "${script_database_mysql[@]}" | grep -v ip`
+    script_or_blacklisted=`echo "SELECT ip, userID FROM ips_blacked WHERE ip LIKE '$1' AND listName LIKE '$2';" | mysql "${script_database_mysql[@]}" | grep -v ip`
     if [ -z "$script_or_blacklisted"  ]; then
         if [ "$prompter" = 1  ]; then
             if [ "$user_notify" = 1  ]; then
@@ -237,7 +235,18 @@ use_database_f () {
             echo "INSERT INTO ips_history (ip, date, action) VALUES ('$1', Now(), 'Added $2');" | mysql "${script_database_mysql[@]}"
         fi
     else
-        echo "UPDATE ips_blacked SET recheck=Now() WHERE ip LIKE '$1' AND listName LIKE '$2';" | mysql "${script_database_mysql[@]}"
+        if [ "$user_notify" = 1  ]; then
+            local curent_user
+            curent_user=`echo $script_or_blacklisted | awk {'print $2'}`
+            if [ "$user_email" = "$curent_user" ]; then
+                echo "UPDATE ips_blacked SET recheck=Now(), WHERE ip LIKE '$1' AND listName LIKE '$2';" | mysql "${script_database_mysql[@]}"
+            else
+                echo "UPDATE ips_blacked SET userID='$user_email', date=Now(), recheck=Now() WHERE ip LIKE '$1' AND listName LIKE '$2';" | mysql "${script_database_mysql[@]}"
+                echo "INSERT INTO ips_history (ip, date, action, userID) VALUES ('$1', Now(), 'User changed from $curent_user to $user_email', '$user_email');" | mysql "${script_database_mysql[@]}"
+            fi
+        else
+            echo "UPDATE ips_blacked SET recheck=Now() WHERE ip LIKE '$1' AND listName LIKE '$2';" | mysql "${script_database_mysql[@]}"
+        fi
     fi
 }
 
@@ -260,6 +269,13 @@ lets_go_f () {
 		fi
 		echo "ip $2 blacklisted on $3 list - gotten result $res"
 	else
+		if [ "$script_use_database" = 1 ]; then
+			check_or_need_remove=`echo "SELECT ip FROM ips_blacked WHERE ip LIKE '$2' AND listName LIKE '$3';" | mysql "${script_database_mysql[@]}" | grep -v ip`
+			if [ ! -z $check_or_need_remove ]; then
+				echo "DELETE FROM ips_blacked WHERE ip LIKE '$2' AND listName LIKE '$3';" | mysql "${script_database_mysql[@]}"
+				echo "INSERT INTO ips_history (ip, date, action) VALUES ('$2', Now(), 'Removed $3');" | mysql "${script_database_mysql[@]}"
+			fi
+		fi
 		if [ "$show_only_blocked" = 0 ]; then
 			echo "ip $2 not blacklisted on $3 list - gotten result $res"
 		fi
@@ -267,10 +283,6 @@ lets_go_f () {
 
 }
 
-if [ "$script_use_database" = 1 ]; then
-	check_curent_records_in_db_f
-fi
-	
 while read i;
 do
 	i1=`echo $i | awk '{print $1}'`
@@ -311,6 +323,7 @@ do
 			fi   
 		fi
 		unset mailarr
-	fi			
+	fi
 sleep $ssub
 done <$workdir/$sub
+
