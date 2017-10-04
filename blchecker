@@ -108,9 +108,9 @@ fi
 #check ip function
 checkip_f () {
     if [ -z "$dnsserver"  ]; then
-        dig +short $1.$2 | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep 127.0.* | head -n -1
+        dig +short $1.$2 | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep 127.0.* | head -n 1
     else
-        dig +short @$dnsserver $1.$2 | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep 127.0.* | head -n -1
+        dig +short @$dnsserver $1.$2 | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep 127.0.* | head -n 1
     fi
 }
 
