@@ -398,7 +398,7 @@ echo "Will script use array to send emails:         $semail"
 
 
 if [ $all_subnets_files = 1 ]; then
-	for subnet_files in $(ls $workdir/$sub)
+	for subnet_files in $(ls $workdir/$sub*)
 	do
 		while read i;
 		do
