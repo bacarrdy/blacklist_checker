@@ -409,7 +409,11 @@ if [ $all_subnets_files = 1 ]; then
                                 if [ $runing_jobs < $how_many_jobs ]; then
                                         main_control_f $i1 $i2 $i3 &
                                 else
-                                        sleep 5
+					while [ $runing_jobs -ge $how_many_jobs ]
+					do
+	                                        sleep 5
+						runing_jobs=`jobs | wc -l`
+					done
                                 fi
 			else
 				main_control_f $i1 $i2 $i3
@@ -431,7 +435,11 @@ else
                 	if [ $runing_jobs < $how_many_jobs ]; then
                 		main_control_f $i1 $i2 $i3 &
                 	else
-                		sleep 5
+				while [ $runing_jobs -ge $how_many_jobs ]
+				do
+	                        	sleep 5
+					runing_jobs=`jobs | wc -l`
+				done
                 	fi
 		else
 			main_control_f $i1 $i2 $i3
