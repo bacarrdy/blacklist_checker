@@ -71,6 +71,7 @@ pbl.spamhaus.org http://www.spamhaus.org/query/bl?ip={{ip}}
 sbl.spamhaus.org http://www.spamhaus.org/query/bl?ip={{ip}}
 xbl.spamhaus.org http://www.spamhaus.org/query/bl?ip={{ip}}
 zen.spamhaus.org http://www.spamhaus.org/query/bl?ip={{ip}}
+sbl-xbl.spamhaus.org http://www.spamhaus.org/query/bl?ip={{ip}}
 b.barracudacentral.org http://www.barracudacentral.org/rbl/removal-request/{{ip}}&address={{ip}}\&email={{email}}&phone={{phone}}&ir_code=&submit=submit+request
 bb.barracudacentral.org http://www.barracudacentral.org/rbl/removal-request/{{ip}}&address={{ip}}\&email={{email}}&phone={{phone}}&ir_code=&submit=submit+request
 rbl.realtimeblacklist.com https://realtimeblacklist.com/lookup/?{{ip}}
