@@ -6,15 +6,14 @@
 ##mailx (if chosen use_smtp="1")
 
 #If this is set to 1 then each subnet will be checked seperated (each subnet checking function will be sent to background)
-#Dont use this function if you have a lot of subnets because you can flood blacklists DNS servers and they can just block you
-#If you are seting up this to 1 then i recomend add no more 5 subnets in subnets file
-#If you want to check more then 5 subnets please check variable below by one position
 run_in_background=1
 
-#If this is set to 1 then script will read all subnets files from working directory. (this allows you to create more subnets files with different subnets)
-#For example you can create subnets, subnets1, subnets2 (and so on) files and then script will read one by one files (files name must start exactly like in #File name where subnets are stored sub=subnets variable)
-#This is good when you runing subnets in background (run_in_background=1) and you want to load balance
-#For example by adding in each subnets file up to 5 subnets and you need to check for example 100 subnets, so you will need to create 20 subnets files :)
+#how many backgroundds start (in other words how many subnest will be checked instantly)
+how_many_jobs=5
+
+#If this is set to 1 you can have more then one subnets file and when first subnets file will be finished it will start second one
+#subnets files names must start same as in (sub=subnets) variable but with different ending
+#for example subnets1 subnets2 subnets3
 all_subnets_files=1
 
 #DNS server (some times own DNS server can check queryes slower so you want to enter an dns server manualy) leave it empty if you want to use your own dns server
@@ -406,7 +405,12 @@ if [ $all_subnets_files = 1 ]; then
 			i2=`echo $i | awk '{print $2}'`
 			i3=`echo $i | awk '{print $3}'`
 			if [ $run_in_background = 1 ]; then
-				main_control_f $i1 $i2 $i3 &
+                                runing_jobs=`jobs | wc -l`
+                                if [ $runing_jobs < $how_many_jobs ]; then
+                                        main_control_f $i1 $i2 $i3 &
+                                else
+                                        sleep 5
+                                fi
 			else
 				main_control_f $i1 $i2 $i3
 				sleep $ssub
@@ -422,8 +426,13 @@ else
 		i1=`echo $i | awk '{print $1}'`
 		i2=`echo $i | awk '{print $2}'`
 		i3=`echo $i | awk '{print $3}'`
-		if [ $run_in_background = 1 ];then
-			main_control_f $i1 $i2 $i3 &
+		if [ $run_in_background = 1 ]; then
+                	runing_jobs=`jobs | wc -l`
+                	if [ $runing_jobs < $how_many_jobs ]; then
+                		main_control_f $i1 $i2 $i3 &
+                	else
+                		sleep 5
+                	fi
 		else
 			main_control_f $i1 $i2 $i3
 			sleep $ssub
