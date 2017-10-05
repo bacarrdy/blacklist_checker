@@ -397,54 +397,59 @@ echo "Will script use array to send emails:         $semail"
 
 
 if [ $all_subnets_files = 1 ]; then
-	for subnet_files in $(ls $workdir/$sub*)
-	do
-		while read i;
-		do
-			i1=`echo $i | awk '{print $1}'`
-			i2=`echo $i | awk '{print $2}'`
-			i3=`echo $i | awk '{print $3}'`
-			if [ $run_in_background = 1 ]; then
+        for subnet_files in $(ls $workdir/$sub*)
+        do
+                while read i;
+                do
+                        i1=`echo $i | awk '{print $1}'`
+                        i2=`echo $i | awk '{print $2}'`
+                        i3=`echo $i | awk '{print $3}'`
+                        if [ $run_in_background = 1 ]; then
                                 runing_jobs=`jobs | wc -l`
-                                if [ $runing_jobs < $how_many_jobs ]; then
+                                if [ $runing_jobs -lt $how_many_jobs ]; then
                                         main_control_f $i1 $i2 $i3 &
                                 else
-					while [ $runing_jobs -ge $how_many_jobs ]
-					do
-	                                        sleep 5
-						runing_jobs=`jobs | wc -l`
-					done
+                                        while [ $runing_jobs -ge $how_many_jobs ]
+                                        do
+                                                sleep 5
+                                                runing_jobs=`jobs | wc -l`
+                                        done
+                                        main_control_f $i1 $i2 $i3 &
                                 fi
-			else
-				main_control_f $i1 $i2 $i3
-				sleep $ssub
-			fi
-		done <$subnet_files
-		if [ $run_in_background = 1 ]; then
-                	unset mailarr
+                        else
+                                main_control_f $i1 $i2 $i3
+                                sleep $ssub
+                        fi
+                done <$subnet_files
+                if [ $run_in_background = 1 ]; then
+                        unset mailarr
                 fi
-	done
+        done
 else
-	while read i;
-	do
-		i1=`echo $i | awk '{print $1}'`
-		i2=`echo $i | awk '{print $2}'`
-		i3=`echo $i | awk '{print $3}'`
-		if [ $run_in_background = 1 ]; then
-                	runing_jobs=`jobs | wc -l`
-                	if [ $runing_jobs < $how_many_jobs ]; then
-                		main_control_f $i1 $i2 $i3 &
-                	else
-				while [ $runing_jobs -ge $how_many_jobs ]
-				do
-	                        	sleep 5
-					runing_jobs=`jobs | wc -l`
-				done
-                	fi
-		else
-			main_control_f $i1 $i2 $i3
-			sleep $ssub
-		fi
-	done <$workdir/$sub
+        while read i;
+        do
+                i1=`echo $i | awk '{print $1}'`
+                i2=`echo $i | awk '{print $2}'`
+                i3=`echo $i | awk '{print $3}'`
+                if [ $run_in_background = 1 ]; then
+                        runing_jobs=`jobs | wc -l`
+                        if [ $runing_jobs -lt $how_many_jobs ]; then
+                                main_control_f $i1 $i2 $i3 &
+                                echo $i1 $i2 $i3
+                        else
+                                while [ $runing_jobs -ge $how_many_jobs ]
+                                do
+                                        sleep 5
+                                        runing_jobs=`jobs | wc -l`
+                                done
+                                main_control_f $i1 $i2 $i3 &
+                                echo $i1 $i2 $i3
+                        fi
+                else
+                        main_control_f $i1 $i2 $i3
+                        sleep $ssub
+                fi
+        done <$workdir/$sub
 fi
+
 
