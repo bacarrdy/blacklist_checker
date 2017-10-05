@@ -158,7 +158,7 @@ reverseip_f () {
 #}
 
 prompter_f () {
-	rez_prompter=`cat $workdir/prompter | grep -v "#" | grep $1 | awk '{print $2}' |  sed "s/{{ip}}/$3/g" | sed "s/{{phone}}/$prompter_phone/g" | sed "s/{{email}}/$prompter_email/g"`
+	rez_prompter=`cat $workdir/prompter | grep -v "#" | grep $1 | head -n 1 | awk '{print $2}' |  sed "s/{{ip}}/$3/g" | sed "s/{{phone}}/$prompter_phone/g" | sed "s/{{email}}/$prompter_email/g"`
 	if [ ! -z "$rez_prompter"  ]; then
 		EMAILMESSAGE=`echo "ip $3 blacklisted on $1 list - gotten result $2\n$rez_prompter\n\n"`
 	else
