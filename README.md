@@ -42,15 +42,26 @@ Script requires:
 I have checked it on our www.VPSnet.com subnets and it works fine, you can edit it if you want
 
 Script futhers:
+
 #See content in blcheck.sh to configure these futhers
+
 Script can run each subnet in to background so in that case you can check as many as you need subnets instantly (in same time)
+
 If you run script in background you can controll how many background you want to run
+
 You can tell to script or he should check all subnets files or only one (if you will set to check all files script will read subnets*)
+
 There is possibility to specify DNS server for diging subnets or if you will leave empty this space it will use main dns server
+
 Prompter can tell you delisting procedure in email
+
 You can use smtp or simpe mail from server
+
 You can use database to store logs and curently blacklisted ips
+
 There is some basic web interface
+
 Also there is your curent users notification system about blacklisted ip`s (you need to customize mysql queryes to get details about users so you need to activate it only when you know what you are doing)
+
 And many others
 
