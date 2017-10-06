@@ -41,7 +41,11 @@ Script requires:
 
 I have checked it on our www.VPSnet.com subnets and it works fine, you can edit it if you want
 
+
+
+
 Script futhers:
+
 #See content in blcheck.sh to configure these futhers
 
 Script can run each subnet in to background so in that case you can check as many as you need subnets instantly (in same time)
