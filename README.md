@@ -1,10 +1,12 @@
 blacklist_checker
 =================
 
-Simple bash script to check whether if single IP addresses or subnets are blacklisted or not. 
-Made by www.vpsnet.lt
+Bash script to check whether your ips are blacklisted.
+Made by www.vpsnet.com
 
-This simple script can check subnets (from file sub) to see if they are blacklisted in a blacklist (from file list)
+This simple script can check subnets (from file subnets) to see if they are blacklisted in a blacklist (from file list)
+
+You need to check variables in blcheck.sh file and configure them by your requirements.
 
 Just add subnets in file sub like this:
 
@@ -37,4 +39,18 @@ Script requires:
 	dig
 	mailx (heirloom-mailx)
 
-I have checked it on our www.VPSnet.lt subnets and it works fine, you can edit it if you want
+I have checked it on our www.VPSnet.com subnets and it works fine, you can edit it if you want
+
+Script futhers:
+#See content in blcheck.sh to configure these futhers
+Script can run each subnet in to background so in that case you can check as many as you need subnets instantly (in same time)
+If you run script in background you can controll how many background you want to run
+You can tell to script or he should check all subnets files or only one (if you will set to check all files script will read subnets*)
+There is possibility to specify DNS server for diging subnets or if you will leave empty this space it will use main dns server
+Prompter can tell you delisting procedure in email
+You can use smtp or simpe mail from server
+You can use database to store logs and curently blacklisted ips
+There is some basic web interface
+Also there is your curent users notification system about blacklisted ip`s (you need to customize mysql queryes to get details about users so you need to activate it only when you know what you are doing)
+And many others
+
