@@ -261,7 +261,7 @@ use_database_f () {
             local curent_user
             curent_user=`echo $script_or_blacklisted | awk {'print $2'}`
             if [ "$user_email" = "$curent_user" ]; then
-                echo "UPDATE ips_blacked SET recheck=Now(), WHERE ip LIKE '$1' AND listName LIKE '$2';" | mysql "${script_database_mysql[@]}"
+                echo "UPDATE ips_blacked SET recheck=Now() WHERE ip LIKE '$1' AND listName LIKE '$2';" | mysql "${script_database_mysql[@]}"
             else
                 echo "UPDATE ips_blacked SET userID='$user_email', date=Now(), recheck=Now() WHERE ip LIKE '$1' AND listName LIKE '$2';" | mysql "${script_database_mysql[@]}"
                 echo "INSERT INTO ips_history (ip, date, action, userID) VALUES ('$1', Now(), 'User changed from $curent_user to $user_email', '$user_email');" | mysql "${script_database_mysql[@]}"
