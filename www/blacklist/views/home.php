@@ -8,27 +8,76 @@
                     <div class="col-md-12">
                         <div class="card">
                             <div class="header">
-                                <h4 class="title">IPs List (<?=$numOfIps;?>)</h4>
+<div class="row">
+	<div class="col-md-2">
+		<h4 class="title">IPs List (<?=$numOfIps;?>)
+	</div>
+	<div class="col-md-4">
+		<div class="btn-group" role="group" aria-label="...">
+		  <a 
+			href="<?=$selectCatLink;?>category=0" 
+			class="btn btn-default"
+			<?php if (empty($selectedCat)) { ?> disabled <?php } ?>
+		  >
+			All categories
+		  </a>
+		<?php if (!empty($categories)) { ?>
+			<?php foreach($categories as $category) { ?>
+				<a 
+					class="btn btn-primary" 
+					href="<?=$selectCatLink;?>category=<?=$category->id;?>"
+					<?php if (!empty($selectedCat) && $category->id == $selectedCat->id) { ?> disabled <?php } ?>
+				>
+					<?=$category->name;?>
+				</a>
+			<?php } ?>
+		<?php } ?>
+		</div>
+	</div>
+	<div class="col-md-4">
+		<div class="btn-group" role="group" aria-label="...">
+		  <a 
+			href="<?=$compressedLink;?>compressed=false" 
+			class="btn btn-default"
+			<?php if (!$compressedByIp) { ?> disabled <?php } ?>
+		  >
+			Expanded
+		  </a>
+		  <a 
+			href="<?=$compressedLink;?>compressed=true" 
+			class="btn btn-default"
+			<?php if ($compressedByIp) { ?> disabled <?php } ?>
+		  >
+			Compressed
+		  </a>
+		</div>
+	</div>
+</div>
+								</h4>
                             </div>
                             <div class="content table-responsive table-full-width">
                                 <table class="table table-striped">
                                     <thead>
 										<tr>
-											<th>#</th>
 											<th>
-												<a href="<?=$tx->sortUrl( array(0,1) );?>">
-													<?=$tx->sortView( array(0,1) );?> IP
-												</a>
-											</th>
-											<th>In</th>
-											<th>
-												<a href="<?=$tx->sortUrl( array(2,3) );?>">
-													<?=$tx->sortView( array(2,3) );?> User ID
+												<a href="<?=$sorter->sortUrl( array(0,1) );?>">
+													<?=$sorter->sortView( array(0,1) );?> IP
 												</a>
 											</th>
 											<th>
-												<a href="<?=$tx->sortUrl( array(4,5) );?>">
-													<?=$tx->sortView( array(4,5) );?> Date
+												<a href="<?=$sorter->sortUrl( array(2,3) );?>">
+													<?=$sorter->sortView( array(2,3) );?> In
+												</a>
+											</th>
+											<th>Category name</th>
+											<th>
+												<a href="<?=$sorter->sortUrl( array(4,5) );?>">
+													<?=$sorter->sortView( array(4,5) );?> User ID
+												</a>
+											</th>
+											<th>
+												<a href="<?=$sorter->sortUrl( array(6,7) );?>">
+													<?=$sorter->sortView( array(6,7) );?> Date
 												</a>
 											</th>
 											<th>Actions</th>
@@ -38,9 +87,9 @@
 										<?php if ($numOfIps > 0) { ?>
 											<?php foreach($records as $record) { ?>
 												<tr>
-													<td><?=$record['id'];?></td>
 													<td><?=$record['ip'];?></td>
 													<td><?=$record['in'];?></td>
+													<td><?=$record['categoryName'];?></td>
 													<td><?=$record['userID'];?></td>
 													<td><?=$record['date'];?></td>
 													<td>

@@ -1,6 +1,14 @@
 <?php 
 
 class Utils {
+	public function prepareUrlWithQuery($query = false) {
+		if (strpos($query, "?") === false) {
+			$query .= "?";
+		}else{
+			$query .= "&";
+		}
+		return $query;
+	}
 	public function getQueryPath() {
 		$url = Flight::request()->base;
 		$url .= Flight::request()->url;

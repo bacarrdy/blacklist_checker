@@ -18,18 +18,19 @@
                                     <thead>
 										<tr>
 											<th>
-												<a href="<?=$tx->sortUrl( array(0,1) );?>">
-													<?=$tx->sortView( array(0,1) );?> IP
+												<a href="<?=$sorter->sortUrl( array(0,1) );?>">
+													<?=$sorter->sortView( array(0,1) );?> IP
 												</a>
 											</th>
 											<th>
-												<a href="<?=$tx->sortUrl( array(2,3) );?>">
-													<?=$tx->sortView( array(2,3) );?> User ID
+												<a href="<?=$sorter->sortUrl( array(2,3) );?>">
+													<?=$sorter->sortView( array(2,3) );?> User ID
 												</a>
 											</th>
+											<th>Category Name</th>
 											<th>
-												<a href="<?=$tx->sortUrl( array(4,5) );?>">
-													<?=$tx->sortView( array(4,5) );?> Date
+												<a href="<?=$sorter->sortUrl( array(4,5) );?>">
+													<?=$sorter->sortView( array(4,5) );?> Date
 												</a>
 											</th>
 											<th>Actions</th>
@@ -38,16 +39,17 @@
                                     <tbody>
 										<?php if ($numOfIps > 0) { ?>
 											<?php foreach($records as $record) { ?>
-												<?php if ($record['inBlackList']) { ?>
+												<?php if (isset($record['inBlackList']) && $record['inBlackList']) { ?>
 												<tr class="danger">
-												<?php }else if ($record['noAction']) { ?>
+												<?php }else if (isset($record['noAction']) && $record['noAction']) { ?>
 												<tr class="warning">
 												<?php } else { ?>
 												<tr>
 												<?php } ?>
 													<td><?=$record['ip'];?></td>
-													<td><?=$record['lastOwner'];?></td>
-													<td><?=$record['lastDate'];?></td>
+													<td><?=isset($record['lastOwner'])?$record['lastOwner']:'';?></td>
+													<td><?=isset($record['categoryName'])?$record['categoryName']:'';?></td>
+													<td><?=isset($record['lastDate'])?$record['lastDate']:'';?></td>
 													<td>
 														<div class="btn-group" role="group" aria-label="...">
 															<button type="button" class="btn btn-default" data-toggle="modal" data-ip="<?=$record['ip'];?>" data-target="#historyModal">History</button>

@@ -50,14 +50,20 @@
             <ul class="nav">
                 <li class="active">
                     <a href="<?=$baseOfUrl;?>home">
-                        <i class="ti-pie-chart"></i>
+                        <i class="ti-menu-alt"></i>
                         <p>BlackListed IPs</p>
                     </a>
                 </li>
                 <li>
                     <a href="<?=$baseOfUrl;?>search">
-                        <i class="ti-pie-chart"></i>
+                        <i class="ti-search"></i>
                         <p>Search</p>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?=$baseOfUrl;?>categories">
+                        <i class="ti-server"></i>
+                        <p>Categories</p>
                     </a>
                 </li>
 
