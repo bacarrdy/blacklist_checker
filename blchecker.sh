@@ -264,7 +264,7 @@ use_database_f () {
                 echo "UPDATE ips_blacked SET recheck=Now() WHERE ip LIKE '$1' AND listName LIKE '$2';" | mysql "${script_database_mysql[@]}"
             else
                 echo "UPDATE ips_blacked SET userID='$user_email', date=Now(), recheck=Now() WHERE ip LIKE '$1' AND listName LIKE '$2';" | mysql "${script_database_mysql[@]}"
-                echo "INSERT INTO ips_history (ip, date, action, userID) VALUES ('$1', Now(), 'User changed from $curent_user to $user_email', '$user_email');" | mysql "${script_database_mysql[@]}"
+                echo "INSERT INTO ips_history (ip, date, action, userID) VALUES ('$1', Now(), 'User changed from $curent_user to $user_email, still listed in $2', '$user_email');" | mysql "${script_database_mysql[@]}"
             fi
         else
             echo "UPDATE ips_blacked SET recheck=Now() WHERE ip LIKE '$1' AND listName LIKE '$2';" | mysql "${script_database_mysql[@]}"
@@ -408,6 +408,7 @@ if [ $all_subnets_files = 1 ]; then
                                 runing_jobs=`jobs | wc -l`
                                 if [ $runing_jobs -lt $how_many_jobs ]; then
                                         main_control_f $i1 $i2 $i3 &
+					echo "Subnet $i1 $i2 $i3 started to check in background"
                                 else
                                         while [ $runing_jobs -ge $how_many_jobs ]
                                         do
@@ -415,8 +416,10 @@ if [ $all_subnets_files = 1 ]; then
                                                 runing_jobs=`jobs | wc -l`
                                         done
                                         main_control_f $i1 $i2 $i3 &
+					echo "Subnet $i1 $i2 $i3 started to check in background"
                                 fi
                         else
+				echo "Subnet $i1 $i2 $i3 started to check"
                                 main_control_f $i1 $i2 $i3
                                 sleep $ssub
                         fi
@@ -435,7 +438,7 @@ else
                         runing_jobs=`jobs | wc -l`
                         if [ $runing_jobs -lt $how_many_jobs ]; then
                                 main_control_f $i1 $i2 $i3 &
-                                echo $i1 $i2 $i3
+                                echo "Subnet $i1 $i2 $i3 started to check in background"
                         else
                                 while [ $runing_jobs -ge $how_many_jobs ]
                                 do
@@ -443,9 +446,10 @@ else
                                         runing_jobs=`jobs | wc -l`
                                 done
                                 main_control_f $i1 $i2 $i3 &
-                                echo $i1 $i2 $i3
+                                echo "Subnet $i1 $i2 $i3 started to check in background"
                         fi
                 else
+			echo "Subnet $i1 $i2 $i3 started to check"
                         main_control_f $i1 $i2 $i3
                         sleep $ssub
                 fi
