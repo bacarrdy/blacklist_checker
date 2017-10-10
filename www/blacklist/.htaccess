@@ -1,7 +1,7 @@
-AuthType Basic
-AuthName "Restricted Content"
-AuthUserFile /var/www/html/blacklist/.htpasswd
-Require valid-user
+#AuthType Basic
+#AuthName "Restricted Content"
+#AuthUserFile /var/www/html/blacklist/.htpasswd
+#Require valid-user
 
 RewriteEngine On
 RewriteCond %{REQUEST_FILENAME} !-f
