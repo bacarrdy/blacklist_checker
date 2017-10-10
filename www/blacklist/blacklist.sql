@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: 2017 m. Spa 02 d. 13:13
+-- Generation Time: 2017 m. Spa 10 d. 15:07
 -- Server version: 5.5.50
 -- PHP Version: 5.4.45
 
@@ -39,6 +39,30 @@ CREATE TABLE IF NOT EXISTS `ips_blacked` (
 -- --------------------------------------------------------
 
 --
+-- Sukurta duomenų struktūra lentelei `ips_categories`
+--
+
+CREATE TABLE IF NOT EXISTS `ips_categories` (
+  `id` int(11) NOT NULL,
+  `name` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Sukurta duomenų struktūra lentelei `ips_categories_ranges`
+--
+
+CREATE TABLE IF NOT EXISTS `ips_categories_ranges` (
+  `id` int(11) NOT NULL,
+  `categoryID` int(11) DEFAULT NULL,
+  `rangeBegin` bigint(20) DEFAULT NULL,
+  `rangeEnd` bigint(20) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
 -- Sukurta duomenų struktūra lentelei `ips_history`
 --
 
@@ -61,6 +85,18 @@ ALTER TABLE `ips_blacked`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `ips_categories`
+--
+ALTER TABLE `ips_categories`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `ips_categories_ranges`
+--
+ALTER TABLE `ips_categories_ranges`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `ips_history`
 --
 ALTER TABLE `ips_history`
@@ -74,6 +110,16 @@ ALTER TABLE `ips_history`
 -- AUTO_INCREMENT for table `ips_blacked`
 --
 ALTER TABLE `ips_blacked`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+--
+-- AUTO_INCREMENT for table `ips_categories`
+--
+ALTER TABLE `ips_categories`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+--
+-- AUTO_INCREMENT for table `ips_categories_ranges`
+--
+ALTER TABLE `ips_categories_ranges`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `ips_history`
