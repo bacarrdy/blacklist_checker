@@ -197,7 +197,7 @@ user_notify_f () {
 			user_language=`echo $user_client_data | awk '{print $4}'`
 			user_f_name=`echo $user_client_data | awk '{print $1}'`
 			user_l_name=`echo $user_client_data | awk '{print $2}'`
-			user_email=`echo $user_client_data | awk '{print $3}'`
+			user_email=`echo $user_client_data | grep -E -o "\b[a-zA-Z0-9.-]+@[a-zA-Z0-9.-]+\.[a-zA-Z0-9.-]+\b"`
 			user_rez_prompter=`cat $workdir/prompter | grep -v "#" | grep $l | head -n 1 | awk '{print $2}' |  sed "s/{{ip}}/$i1.$i2/g" | sed "s/{{phone}}/$prompter_phone/g" | sed "s/{{email}}/$user_email/g"`
 			#now lets generate few different types of messages because in my system there is more then one language
 			if [ "$user_language" = en  ]; then
