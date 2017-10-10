@@ -64,7 +64,7 @@ smtp_ssl_args=(-S smtp-use-starttls -S nss-config-dir=/etc/pki/nssdb/ -S ssl-ver
 #and last think is to configure options below
 
 script_use_database=0 # if 0 script will not use database to store all information if 1 it will store all collected data to mysql (dont forget to create database for it, database file can be found www/blacklist/database.sql)
-script_recheck_from_db_h=24 # after what time blacklisted ips in database will be rechecked (time in hours)
+script_recheck_from_db_h=23 # after what time blacklisted ips in database will be rechecked (time in hours)
 script_database_ip="localhost"
 script_database_login="root"
 script_database_password="secret"
