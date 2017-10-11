@@ -141,7 +141,7 @@ reverseip_f () {
 #    local script_blacklist
 #    local script_ip_reverse
 #    local script_res
-#    script_database_blocked=`echo "SELECT ip, listName FROM ips_blacked WHERE ip LIKE '$1' AND recheck <= DATE_SUB(NOW(), INTERVAL $script_recheck_from_db_h HOUR);" | mysql "${script_database_mysql[@]}"  | grep -v ip`
+#    script_database_blocked=`echo "SELECT ip, listName FROM ips_blacked WHERE ip LIKE '$1' AND recheck <= DATE_SUB(NOW(), INTERVAL $script_recheck_from_db_h HOUR);" | mysql -N "${script_database_mysql[@]}"`
 #    IFS=$'\n'
 #    for script_result in $script_database_blocked
 #    do
@@ -180,20 +180,20 @@ sendemail_f () {
 user_notify_f () {
     #users notification about blocked ips
     #database query to get or ip is actyve (only in my system there is lis of actyve or no ips list thats why i have comented it out)
-    user_ip_used=`echo "SELECT ROW_WHERE_INFO_OF_IP_USED FROM IPS_TABLE WHERE ROW_IPS LIKE '$i1.$i2';" | mysql "${notify_database_mysql[@]}" | grep -v ROW_WHERE_INFO_OF_IP_USED`
+    user_ip_used=`echo "SELECT ROW_WHERE_INFO_OF_IP_USED FROM IPS_TABLE WHERE ROW_IPS LIKE '$i1.$i2';" | mysql -N "${notify_database_mysql[@]}"`
     if [ "$user_ip_used" = 1  ]; then # answer from db in your system may be different or it dos not exists in your system and it is only example
         #lets check who own ip
         #getting orderid
-        user_order_id=`echo "SELECT ORDER_ID FROM IPS_TABLE WHERE ROW_IPS LIKE '$i1.$i2';" | mysql "${notify_database_mysql[@]}" | grep -v ORDER_ID`
+        user_order_id=`echo "SELECT ORDER_ID FROM IPS_TABLE WHERE ROW_IPS LIKE '$i1.$i2';" | mysql -N "${notify_database_mysql[@]}"`
         if [ "$user_order_id" = 0  ]; then
             if [ "$script_use_database" = 1 ]; then
                 user_email=""
             fi
         else
             #geting clientid
-			user_client_id=`echo "SELECT CLIENT_ID FROM YOUR_ORDERS WHERE ID LIKE '$user_order_id';" | mysql "${notify_database_mysql[@]}" | grep -v CLIENT_ID`
+			user_client_id=`echo "SELECT CLIENT_ID FROM YOUR_ORDERS WHERE ID LIKE '$user_order_id';" | mysql -N "${notify_database_mysql[@]}"`
 			#geting user data witch one we will use to send email notification about blocked ip
-			user_client_data=`echo "SELECT FIRST_NAME,LAST_NAME,EMAIL,USER_LANGUAGE FROM CLIENTS_TABLE WHERE id LIKE '$user_client_id';" | mysql "${notify_database_mysql[@]}" | grep -v FIRST_NAME`
+			user_client_data=`echo "SELECT FIRST_NAME,LAST_NAME,EMAIL,USER_LANGUAGE FROM CLIENTS_TABLE WHERE id LIKE '$user_client_id';" | mysql -N "${notify_database_mysql[@]}"`
 			user_language=`echo $user_client_data | awk '{print $4}'`
 			user_f_name=`echo $user_client_data | awk '{print $1}'`
 			user_l_name=`echo $user_client_data | awk '{print $2}'`
@@ -242,7 +242,7 @@ user_notify_f () {
 
 
 use_database_f () {
-    script_or_blacklisted=`echo "SELECT ip, userID FROM ips_blacked WHERE ip LIKE '$1' AND listName LIKE '$2';" | mysql "${script_database_mysql[@]}" | grep -v ip`
+    script_or_blacklisted=`echo "SELECT ip, userID FROM ips_blacked WHERE ip LIKE '$1' AND listName LIKE '$2';" | mysql -N "${script_database_mysql[@]}"`
     if [ -z "$script_or_blacklisted"  ]; then
         if [ "$prompter" = 1  ]; then
             if [ "$user_notify" = 1  ]; then
@@ -292,8 +292,8 @@ lets_go_f () {
 		echo "ip $2 blacklisted on $3 list - gotten result $res"
 	else
 		if [ "$script_use_database" = 1 ]; then
-			check_or_need_remove=`echo "SELECT ip FROM ips_blacked WHERE ip LIKE '$2' AND listName LIKE '$3';" | mysql "${script_database_mysql[@]}" | grep -v ip`
-			if [ ! -z $check_or_need_remove ]; then
+			check_or_need_remove=`echo "SELECT ip FROM ips_blacked WHERE ip LIKE '$2' AND listName LIKE '$3';" | mysql -N "${script_database_mysql[@]}"`
+			if [ ! -z "$check_or_need_remove" ]; then
 				echo "DELETE FROM ips_blacked WHERE ip LIKE '$2' AND listName LIKE '$3';" | mysql "${script_database_mysql[@]}"
 				echo "INSERT INTO ips_history (ip, date, action) VALUES ('$2', Now(), 'Removed $3');" | mysql "${script_database_mysql[@]}"
 			fi
@@ -315,9 +315,9 @@ main_control_f () {
                 for l in $(cat $workdir/$listas | grep -v "#")
                 do
                         if [ "$script_use_database" = 1 ]; then
-                                script_ip_curent_exists=`echo "SELECT ip, listName FROM ips_blacked WHERE ip LIKE '$i1.$i2' AND listName LIKE '$l';" | mysql "${script_database_mysql[@]}" | grep -v ip`
+                                script_ip_curent_exists=`echo "SELECT ip, listName FROM ips_blacked WHERE ip LIKE '$i1.$i2' AND listName LIKE '$l';" | mysql -N "${script_database_mysql[@]}"`
                                 if [ ! -z "$script_ip_curent_exists" ]; then
-                                        script_ip_curent_listed=`echo "SELECT ip, listName FROM ips_blacked WHERE ip LIKE '$i1.$i2' AND listName LIKE '$l' AND recheck < DATE_SUB(NOW(), INTERVAL $script_recheck_from_db_h HOUR);" | mysql "${script_database_mysql[@]}" | grep -v ip`
+                                        script_ip_curent_listed=`echo "SELECT ip, listName FROM ips_blacked WHERE ip LIKE '$i1.$i2' AND listName LIKE '$l' AND recheck < DATE_SUB(NOW(), INTERVAL $script_recheck_from_db_h HOUR);" | mysql -N "${script_database_mysql[@]}"`
                                         if [ ! -z "$script_ip_curent_listed" ]; then
                                                 lets_go_f $ip $i1.$i2 $l $i1
                                         else
@@ -343,7 +343,7 @@ main_control_f () {
                                 echo -e  ${mailarr[*]} | mail -s "BLACKLISTED ips $i1" "$EMAIL"
                         fi
                 fi
-		if [ $run_in_background = 0 ]; then
+		if [ "$run_in_background" = 0 ]; then
                 	unset mailarr
 		fi
         fi
@@ -369,7 +369,7 @@ echo ""
 echo "Or blacklist checking will run in background: $run_in_background"
 echo "Or script will use all subnets files:         $all_subnets_files"
 echo "Blacklists file:                              $listas"
-if [ $all_subnets_files = 1 ]; then
+if [ "$all_subnets_files" = 1 ]; then
 	subecho=`ls $workdir/ | grep subnets`
 	echo "Subnets file:                                 $subecho"
 else
@@ -396,7 +396,7 @@ echo "Sleep betwen each blacklist check:            $sblck"
 echo "Will script use array to send emails:         $semail"
 
 
-if [ $all_subnets_files = 1 ]; then
+if [ "$all_subnets_files" = 1 ]; then
         for subnet_files in $(ls $workdir/$sub*)
         do
                 while read i;
@@ -404,9 +404,9 @@ if [ $all_subnets_files = 1 ]; then
                         i1=`echo $i | awk '{print $1}'`
                         i2=`echo $i | awk '{print $2}'`
                         i3=`echo $i | awk '{print $3}'`
-                        if [ $run_in_background = 1 ]; then
+                        if [ "$run_in_background" = 1 ]; then
                                 runing_jobs=`jobs | wc -l`
-                                if [ $runing_jobs -lt $how_many_jobs ]; then
+                                if [ "$runing_jobs" -lt "$how_many_jobs" ]; then
                                         main_control_f $i1 $i2 $i3 &
 					echo "Subnet $i1 $i2 $i3 started to check in background"
                                 else
@@ -424,7 +424,7 @@ if [ $all_subnets_files = 1 ]; then
                                 sleep $ssub
                         fi
                 done <$subnet_files
-                if [ $run_in_background = 1 ]; then
+                if [ "$run_in_background" = 1 ]; then
                         unset mailarr
                 fi
         done
@@ -434,9 +434,9 @@ else
                 i1=`echo $i | awk '{print $1}'`
                 i2=`echo $i | awk '{print $2}'`
                 i3=`echo $i | awk '{print $3}'`
-                if [ $run_in_background = 1 ]; then
+                if [ "$run_in_background" = 1 ]; then
                         runing_jobs=`jobs | wc -l`
-                        if [ $runing_jobs -lt $how_many_jobs ]; then
+                        if [ "$runing_jobs" -lt "$how_many_jobs" ]; then
                                 main_control_f $i1 $i2 $i3 &
                                 echo "Subnet $i1 $i2 $i3 started to check in background"
                         else
